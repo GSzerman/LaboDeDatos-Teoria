@@ -1,0 +1,16 @@
+---
+title: "Reporte"
+format: 
+  html:
+    self-contained: true
+editor: visual
+author: "Gabriel Szerman"
+---
+
+## Estrategia:
+
+-   Recopilar todas las resoluciones de la guia y armar de cada guia un resumen de las estructuras mas utilizadas en r para manipular los dataframes
+
+-   Resumir la teoría conceptual de los algoritmos de regresión lineal y polinomial, y de clasificación por desicion tree y knn. Leer las clases teóricas y todos los archivos dados en clase para incorporar al resumen
+
+-   Resumir el código y lo mas utilizado en r para trabajar esos algoritmos
