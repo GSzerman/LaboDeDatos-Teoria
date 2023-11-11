@@ -1,0 +1,215 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+data.edu <- data.frame(id = 1:100, 
+                       edu = sample(x = c("primario","secundario","universitario"), 
+                                    size = 100, 
+                                    replace = T, 
+                                    prob = c(0.1, 0.5, 0.4)))
+
+```
+```{r}
+library("tidyverse")
+
+```
+
+
+```{r}
+head(data.edu,10)
+
+```
+```{r}
+head(data.edu)
+
+```
+
+```{r}
+ggplot(data = data.edu, aes(x = edu)) +
+  geom_bar() +
+  labs(title = "Bar plot Nivel educativo", x = "Cantidad (Count de filas)", y = "Tipo de institucion")
+ #+
+#  theme_minimal()
+```
+
+
+
+```{r}
+# datos de altura y mes de vida de un bebé.
+data.alturas <- data.frame(mes = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+                           altura = c(50, 55, 57, 61, 62, 63, 64, 66, 68, 69, 71, 73, 75))
+
+```
+
+```{r}
+# datos de altura y mes de vida de un bebé.
+ggplot(data=data.alturas, aes(x=mes, y=altura)) + geom_line() + labs(title = "Altura vs tiempo de un bebé", x="Altura", y="Mes")
+
+```
+
+```{r}
+# los datos del experimento que mide la velocidad de la luz estan en el data frame 
+# "morley" que viene en R. ¿qué columnas tiene?
+data.luz <- morley
+
+head(data.luz,15)
+
+
+```
+
+```{r}
+
+library("tidyverse")
+
+
+ggplot(data = data.luz, aes(x = Speed)) + geom_histogram()
+```
+
+```{r}
+ggplot(data = morley, aes(x = Speed)) + geom_boxplot()
+
+```
+```{r}
+ggplot(data = morley, aes(x = Expt, y = Speed)) +
+  geom_boxplot()
+
+```
+
+```{r}
+ggplot(data = morley, aes(x = factor(Expt), y = Speed)) +
+  geom_boxplot() +
+  facet_wrap(~ Expt, scales = "free_x")
+```
+```{r}
+# datos de la preferencia por Maradona-Messi de 43 personas hipotéticas:
+library(ggplot2)
+
+data.futbol <- data.frame(mejor = c("maradona", "messi"),
+                          n     = c(20, 23))
+
+ggplot(data = data.futbol, aes(x = mejor, y = n)) +
+  geom_point()
+
+
+```
+
+```{r}
+head(data.futbol)
+```
+```{r}
+ggplot(data = data.futbol, aes(x = mejor, y = n)) +
+  geom_bar(stat = "identity")
+```
+```{r}
+# datos de horas de sueño y consumo de café
+cafe = runif(100, min = 0, max = 3)
+dormir = rnorm(100, mean = 8) - cafe
+data.cafe <- data.frame(cafe, dormir) 
+
+ggplot(data=data.cafe, aes(x=cafe, y= dormir)) + geom_point() +
+geom_smooth()
+```
+
+```{r}
+package
+```
+
+```{r}
+library(datos)
+
+head(millas)
+
+```
+
+```{r}
+ggplot(data = millas, aes(x = cilindrada, y = autopista)) +
+  geom_point(shape = 2, color = "pink") + theme_classic()
+
+
+```
+
+```{r}
+ggplot(millas, aes(x=cilindrada, y=autopista, fill = cilindrada < 5)) + 
+  geom_point(shape = 24, size = 4) + theme_classic()
+
+```
+
+```{r}
+ggplot(millas, aes(x=cilindrada, y=autopista, fill = cilindrada < 5)) + 
+  geom_point(shape = 24, size = 4) + theme_classic()
+```
+```{r}
+#1.6 Reproducir el siguiente grafico y agregarle título, subtítulo, caption. Cambiarle el label del eje x y del eje y.
+
+
+ggplot(data=millas, aes(x=cilindrada, y=autopista, colour= traccion)) + geom_point() + geom_line() + theme_classic()
+```
+```{r}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAWElEQVR42mNgGPTAxsZmJsVqQApgmGw1yApwKcQiT7phRBuCzzCSDSHGMKINIeDNmWQlA2IigKJwIssQkHdINgxfmBBtGDEBS3KCxBc7pMQgMYE5c/AXPwAwSX4lV3pTWwAAAABJRU5ErkJggg==
+ggplot(data = millas, aes(x = cilindrada, y = autopista, color = traccion)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, aes(group = traccion)) +
+  theme_classic()
+
+```
+
+```{r}
+ggplot(data=millas, aes(x=ciudad)) + geom_histogram()
+```
+
+
+```{r}
+ggplot(data=millas, aes(x=autopista)) + geom_histogram()
+```
+
+```{r}
+
+
+#1.8 Hacer un boxplot del consumo discriminado por tracción. Es decir, 3 boxplots. ¿Cuál es la tracción que menos consume?
+
+
+ggplot(data = millas, aes(x = traccion, y = autopista)) +
+  geom_boxplot() +
+  theme_classic()
+
+```
+```{r}
+ggplot(data=millas, aes(x=cilindrada, y=autopista)) + geom_point() + geom_smooth(method="lm")
+```
+
+```{r}
+ggplot(data = millas, aes(x = cilindrada, y = autopista)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, aes(group = traccion)) +
+  theme_classic()
+
+```
+
+```{r}
+
+
+library(ggplot2)
+
+ggplot(data = millas, aes(x = cilindrada, y = autopista, colour = traccion)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "black") + # Línea única en color negro
+  theme_classic()
+
+```
+```{r}
+ggplot(millas, aes(x = cilindrada, y = autopista)) + 
+  geom_point() +
+  theme_bw() + 
+  facet_grid(traccion~cilindros)
+
+```
+
+```{r}
+
+```
+

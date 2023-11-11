@@ -1,0 +1,1038 @@
+---
+title: "Reporte"
+author: "Agustin Lehmann, Gabriel Szerman, Ernesto Mercado, Ignacio Gallego"
+format: 
+  revealjs:
+      smaller: true
+      scrollable: true
+      width: 1600
+      height: 900
+      self-contained: true
+      include-in-header: 
+        text: |
+          <style>
+          .center-xy {
+            margin: 0;
+            position: absolute;
+            top: 25%;
+            -ms-transform: translateY(-50%), translateX(-50%);
+            transform: translateY(-50%), translateX(-50%);
+          }
+          </style>
+          
+editor: visual
+execute:
+  echo: false
+  warning: false
+---
+
+```{r prep, message=FALSE, include=FALSE}
+#pongan Imports ,funciones y setups globales de los graficos que usen aca
+require(tidyverse)
+require(sf)
+require(showtext)
+require(gridExtra)
+require(ggbreak)
+require(lubridate)
+
+df_bici = read_csv('Data/Bicis_limpio.csv')
+df_clima = read_csv('Data/Clima_limpio.csv')
+
+#el archivo descomprimido era muy grande para github
+unzip("Assets/shapefiles/mapa_calles/callejero.zip", exdir = "Assets/shapefiles/mapa_calles")
+
+mapa = st_read("Assets/shapefiles/mapa_calles") %>% 
+  st_transform( "+proj=longlat +ellps=WGS84 +datum=WGS84")
+
+#fuentes
+font_add_google('IBM Plex Sans',family = 'sans-serif')
+font_add_google('IBM Plex Sans Condensed',family = 'sans-serif')
+showtext_auto()
+
+plot_estacion_destino_mes = function(mes){
+  meses = c("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
+  return(df_bici %>%
+           filter(lubridate::month(fecha_destino_recorrido)== lubridate::month(mes)) %>%
+           group_by(nombre_estacion_destino) %>%
+           summarise(
+             n_viajes = n_distinct(id_recorrido),
+             mes = lubridate::month(fecha_destino_recorrido)[1]
+           ) %>% 
+           arrange(desc(n_viajes)) %>%
+           top_n(10, n_viajes) %>% 
+           head(10) %>%
+           mutate(
+             str_wrap(nombre_estacion_destino, width = 5),
+             top_3 = ifelse((n_viajes>=n_viajes[3]), "Top 3", "Others"),
+           ) %>% 
+           ggplot(aes(x=nombre_estacion_destino, y= n_viajes, level=nombre_estacion_destino, fill = top_3))+
+           geom_col() +
+           geom_text(aes(label=n_viajes), vjust = 1.5, colour = "black") +
+           scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+          labs(
+            title = "Top 10 Cantidad de viajes",
+            subtitle = str_glue("{mes} 2022", mes =meses[mes])
+          ) +
+          theme(
+            plot.title = element_text(size = 18, family ="sans-serif", color = "white", face="bold"),
+            plot.subtitle = element_text(size = 12, family = "sans-serif", color = "grey80"),
+            plot.margin = margin(10, 30, 10, 50),
+            axis.ticks.x = element_line(colour= "white"),
+            axis.text.x = element_text(size = 12, family ="sans-serif", color = "white"),
+            legend.position = "none"
+          ) +
+           scale_fill_manual(values = c("Top 3" = "#affc41", "Others" = "gray80"),guide=F)
+           
+         )
+}
+
+
+plot_estacion_origen_mes = function(mes){
+  meses = c("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
+  return(df_bici %>%
+           filter(lubridate::month(fecha_origen_recorrido)== lubridate::month(mes)) %>%
+           group_by(nombre_estacion_origen) %>%
+           summarise(
+             n_viajes = n_distinct(id_recorrido),
+             mes = lubridate::month(fecha_origen_recorrido)[1]
+           ) %>% 
+           arrange(desc(n_viajes)) %>%
+           top_n(10, n_viajes) %>% 
+           head(10) %>%
+           mutate(
+             str_wrap(nombre_estacion_origen, width = 5),
+             top_3 = ifelse((n_viajes>=n_viajes[3]), "Top 3", "Others"),
+           ) %>% 
+           ggplot(aes(x=nombre_estacion_origen, y= n_viajes, level=nombre_estacion_origen, fill = top_3))+
+           geom_col() +
+           geom_text(aes(label=n_viajes), vjust = 1.5, colour = "black") +
+           scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+          labs(
+            title = "Top 10 Cantidad de viajes",
+            subtitle = str_glue("{mes} 2022", mes =meses[mes])
+          ) +
+          theme(
+            plot.title = element_text(size = 16, family ="sans-serif", color = "white", face="bold"),
+            plot.subtitle = element_text(size = 13, family = "sans-serif", color = "grey80"),
+            plot.margin = margin(10, 30, 10, 50),
+            axis.ticks.x = element_line(colour= "white"),
+            axis.text.x = element_text(size = 12, family ="sans-serif", color = "white", face="bold", lineheight = 0.6),
+            legend.position = "none"
+          ) +
+           scale_fill_manual(values = c("Top 3" = "turquoise", "Others" = "gray80"),guide=F)
+           
+         )
+}
+```
+
+## 
+
+::: center-xy
+En este reporte analizaremos el uso del sistema Ecobici en la Ciudad de Buenos Aires durante el año 2022.
+
+Utilizaremos un dataset específico que consta de 10,000 observaciones seleccionadas de un conjunto de datos mucho más extenso, compuesto por casi 3 millones de registros. Este dataset nos permitirá examinar patrones y tendencias en la utilización de Ecobici. Además, complementaremos este análisis con datos meteorológicos y climáticos de la estación meteorológica de Aeroparque (ID 87582), recopilados desde el 1ro de enero hasta el 31 de diciembre de 2022.
+
+La integración de estos conjuntos de datos nos brindará una visión enriquecedora para comprender mejor la relación entre el uso de Ecobici y las condiciones climáticas en la Ciudad de Buenos Aires
+:::
+
+## Descripcion de los Datasets
+### Clima
+
+Esta conformado por las siguientes columnas:
+
+-   fecha: fecha del registro.
+
+-   tmin, tavg ,tmax: Temperaturas minima, maxima, y promedio del dia.
+
+-   prcp: Precipitacion en mm.
+
+-   wdir, wspd: Direccion y velocidad del viento respectivamente.
+
+-   pres: Precion atmosferica en hPa.
+
+Tambien teniamos las columnas snow wpgt y tsun las cuales decidimos quitar porque estaban compuestas al 100% de nulos asi como tambien reemplazar los nombres de las columnas por algo mas claro.
+
+## Descripcion de los Datasets
+### Bicis
+
+Esta conformado por las columnas:
+
+-   id_recorrido, id_usuario: keys para identificar cada viaje y usuario distinto
+
+-   duracion del recorrido: cuanto duro el viaje (en segundos).
+
+-   latitud / longitud de estacion origen/destino y nombres de las estaciones : datos geograficos sobre la ubicacion y el nombre de cada estacion
+
+-   modelo_bici: que bici estaban usando.
+
+-   genero: de que genero era el usuario.
+
+-   fecha origen/destino, fecha: que dia y a que hora partio/llego y fecha del registro
+
+Decidimos quitar el resto de las columnas ya que eran datos repetidos como la direccion o eran columnas de indice de cuando se redujo del dataset original.
+
+## Clima
+### Generalidades-Temperatura
+
+```{r}
+# Convertimos la columna 'fecha' a tipo Date
+df_clima$fecha <- as.Date(df_clima$fecha)
+
+# Extraemos el mes de la columna 'fecha'
+df_clima$mes <- format(df_clima$fecha, "%m")
+
+#  Convertimos a tipo numerico
+df_clima$mes <- as.numeric(df_clima$mes)
+
+# Agrupamos por mes y calculamos los promedios de cada columna
+df_promedios <- df_clima %>%
+  group_by(mes) %>% summarize(temp_max_prom = mean(temp_max),
+            temp_min_prom = mean(temp_min),
+            lluvias_mm_prom = mean(lluvias_mm),
+            viento_veloc_prom = mean(viento_veloc),
+            presion_prom = mean(presion))
+
+# Comencemos a visualizar los valores
+
+
+
+```
+
+Comenzamos analizando la temperatura.
+
+```{r}
+####Analisis clima
+
+ggplot(df_clima,mapping = aes(x=fecha))+
+  geom_line(mapping=aes(y=temp_prom),alpha=0.3)+
+  geom_smooth(mapping=aes(y=temp_prom),color="grey2",se=F)+
+  geom_smooth(mapping= aes(y=temp_min),se=F)+
+  geom_smooth(mapping = aes(y=temp_max),color="red2",se=F)+
+  scale_x_date(date_labels = "%b",date_breaks = "month")+
+  labs(y="Temperatura (ºC)",x="Fecha",title="Temperatura a lo largo del año")+
+  annotate("text",label="T Max",x=as.Date("2022-02-15"),y=28.5,color="red2",angle="-45")+
+  annotate("text",label="T Min",x=as.Date("2022-02-01"),y=21.5,color="blue",angle="-45")+
+  annotate("text",label="T Prom",x=as.Date("2022-02-10"),y=25,color="grey2",angle="-45")
+
+
+
+
+
+```
+
+La temperatura mas alta ocurrio en enero (37°C) y la mas baja en julio (2.3°C). Veamos las lluvias.
+
+## Clima
+### Generalidades-Lluvias
+
+```{r}
+
+# Promedio mensual de las lluvias con línea suave
+ggplot(df_promedios, aes(x = mes, y = lluvias_mm_prom)) +
+  geom_point(color = "green", size = 3) +
+  geom_smooth(method = "loess", se = FALSE, color = "green", size = 1) +
+  labs(x = "Mes", y = "Promedio de Lluvias (mm)", title = "Promedio mensual de Lluvias (mm)") +
+  scale_x_continuous(breaks = 1:12, labels = c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+```
+
+Se puede ver que hubo mayores precipitaciones en Febrero.
+
+## Clima
+### Generalidades-Viento
+```{r}
+
+# Promedio mensual de la velocidad del viento
+
+ggplot(df_promedios, aes(x = mes, y = viento_veloc_prom)) +
+
+  geom_point(color = "purple", size = 3) +
+
+  geom_smooth(method = "loess", se = FALSE, color = "purple", size = 1) +
+
+  labs(x = "Mes", y = "Promedio de velocidad del viento", title = "Promedio mensual de velocidad del viento") +
+
+  scale_x_continuous(breaks = 1:12, labels = c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")) +
+
+  theme_minimal() +
+
+  theme(
+
+    plot.title = element_text(hjust = 0.5, face = "bold")
+
+  )
+
+```
+
+Hubo vientos mas fuertes en verano que en invierno.
+
+## Clima
+### Generalidades-Presion atmosférica
+
+```{r}
+
+# Promedio mensual de la presión atmosférica con línea suave
+
+ggplot(df_promedios, aes(x = mes, y = presion_prom)) +
+
+  geom_point(color = "orange", size = 3) +
+
+  geom_smooth(method = "loess", se = FALSE, color = "orange", size = 1) +
+
+  labs(x = "Mes", y = "Promedio de Presión", title = "Promedio mensual de Presión Atmosférica") +
+
+  scale_x_continuous(breaks = 1:12, labels = c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")) +
+
+  theme_minimal() +
+
+  theme(
+
+    plot.title = element_text(hjust = 0.5, face = "bold")
+
+  )
+
+```
+
+Si bien hubo mayor presion atmosferica en invierno, no vario mucho.
+
+
+<!--```{r}-->
+
+<!-- # Este grafico tiene la dispersion para todas las variables juntas (excepto la presion porque se iba de rango) -->
+
+<!-- # Promedio mensual para todas las variables con líneas suaves -->
+
+<!-- ggplot(df_promedios, aes(x = mes)) + -->
+
+<!--   geom_point(aes(y = temp_max_prom, color = "Temp Max"), size = 3) + -->
+
+<!--   geom_point(aes(y = temp_min_prom, color = "Temp Min"), size = 3) + -->
+
+<!--   geom_point(aes(y = lluvias_mm_prom, color = "Lluvias (mm)"), size = 3) + -->
+
+<!--   geom_point(aes(y = viento_veloc_prom, color = "Viento Velocidad"), size = 3) + -->
+
+<!--   geom_smooth(aes(y = temp_max_prom, color = "Temp Max"), method = "loess", se = FALSE, size = 1) + -->
+
+<!--   geom_smooth(aes(y = temp_min_prom, color = "Temp Min"), method = "loess", se = FALSE, size = 1) + -->
+
+<!--   geom_smooth(aes(y = lluvias_mm_prom, color = "Lluvias (mm)"), method = "loess", se = FALSE, size = 1) + -->
+
+<!--   geom_smooth(aes(y = viento_veloc_prom, color = "Viento Velocidad"), method = "loess", se = FALSE, size = 1) + -->
+
+<!--   labs(x = "Mes", y = "Promedios", color = "Variables", title = "Promedio mensual") + -->
+
+<!--   scale_x_continuous(breaks = 1:12, labels = c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")) + -->
+
+<!--   scale_color_manual(values = c("Temp Max" = "red", "Temp Min" = "blue", "Lluvias (mm)" = "green", "Viento Velocidad" = "purple")) + -->
+
+<!--   theme_minimal() + -->
+
+<!--   theme( -->
+
+<!--     plot.title = element_text(hjust = 0.5, face = "bold") -->
+
+<!--   ) -->
+
+<!-- ``` -->
+
+## Bicis
+
+::: {.center-xy}
+**Veamos como se ven afectados los viajes en el Dataset **
+:::
+
+## Franja horaria
+
+Analicemos cual es el horario en que se concentra la mayor cantidad de viajes.
+
+```{r}
+
+df_bici %>%
+  mutate(hora_de_salida = lubridate::hour(fecha_origen_recorrido)) %>%
+  ggplot(mapping = aes(x = hora_de_salida)) +
+  geom_line(stat = "count") +
+  scale_x_continuous(breaks = seq(0, 23, by = 2)) +
+  labs(x = "Hora de Salida",
+       y = "Cantidad de Viajes") +
+  theme(axis.title.x = element_text(size = 14, face = "bold"), 
+        axis.title.y = element_text(size = 14, face = "bold"))
+
+```
+
+Podemos ver que el horario de mayor concentración de viajes es entre las 16 y 18hs
+
+Ahora analicemos para cada mes
+
+##
+
+```{r}
+
+df_bici %>%
+  mutate(hora_de_salida = hour(fecha_origen_recorrido)) %>%
+  ggplot(aes(x = hora_de_salida)) +
+  geom_line(stat = "count") +
+  scale_x_continuous(breaks = seq(0, 23, by = 2)) +
+  facet_wrap(vars(month(fecha_origen_recorrido, label = TRUE))) +
+  labs(x = "Hora de Salida",
+       y = "Cantidad de Viajes",
+       title = "Cantidad de viajes por hora de salida (Mes a mes)") +
+  theme(axis.title.x = element_text(size = 14, face = "bold"),
+        axis.title.y = element_text(size = 14, face = "bold"),
+        plot.title = element_text(size = 16, face = "bold"))
+
+```
+
+Observamos que la tendencia se mantiene, exceptuando el mes de enero. Analicemos la cantidad de viajes a lo largo del año para ver si la cantidad de viajes disminuye en enero
+
+## Cantidad de viajes
+
+```{r}
+theme_set(theme_minimal())
+
+theme_update(
+  plot.background = element_rect(fill = "#0b132b"),
+  panel.background = element_rect(fill = "#0b132b", colour = "#0b132b"),
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_blank(),
+  axis.text = element_blank(),
+  axis.title = element_blank(),
+  axis.ticks = element_blank(),
+  legend.text = element_text(color = "white"),
+  legend.title = element_text(color = "white")
+)
+
+df_bici %>%
+  mutate(
+    fecha = lubridate::ceiling_date(fecha, "week"),
+    semana = lubridate::week(fecha)
+  ) %>%
+  group_by(semana) %>%
+  summarise(
+    n_viajes = n_distinct(id_recorrido),
+    fecha =  format(fecha[1], "%d\n%b")
+  ) %>%
+  arrange(desc(n_viajes)) %>%
+  mutate(
+    top_5 = ifelse((n_viajes>=n_viajes[5]), "Top 5", ifelse((n_viajes<=n_viajes[48]), "Bottom 5", "Others")),
+  ) %>% 
+  ggplot(aes(x = semana, y = n_viajes)) +
+  geom_col(aes(fill = top_5)) +
+  geom_smooth(aes(y=n_viajes),se=F, color="#ffbe0b", size=1.5, method="gam", alpha = 0.1) +
+  geom_text(aes(label = n_viajes), position = position_stack(vjust = 0.5), color = "black") +
+  geom_text(aes(label = fecha, y = n_viajes + 1), position = position_stack(vjust = 1.06), color = "white", lineheight = 0.6) +
+  scale_x_continuous(breaks = seq(from = 1, to = 53, by = 1)) +
+  scale_fill_manual(values = c("Top 5" = "turquoise", "Others" = "gray80", "Bottom 5" = "#fb5607")) +
+  guides(fill = FALSE) + 
+  labs (
+    title = "Cantidad de viajes 2022",
+    subtitle = "Semanalmente",
+    
+  ) +
+  theme(
+    plot.title = element_text(size = 18, family ='sans-serif',face='bold', color = "white"),
+    plot.subtitle = element_text(size = 12, family = 'sans-serif', color = "grey80"),
+  )
+```
+
+::: {style="font-size: 60%;"}
+La cantidad de viajes disminuye en el verano y el invierno siendo los puntos mas bajos las semanas del 9-1 al 29-1 en el verano y las semanas del 17 de julio y 31 julio en el invierno.
+
+Por el contrario hay mas viajes en otoño y primavera, siendo la semana del 10 de abril y del 2 de octubre las semanas en las que hubo mas uso.
+
+Respecto al análisis que veniamos haciendo, la cantidad total de viajes disminuye en enero y eso va de la mano con esa disminución de amplitud en el horario pico. Como dato llamativo, en invierno esa disminución en el horario pico, si bien también se da y coincide con la disminución en la cantidad total de viajes, esa disminución de amplitud en el horario pico es mucho mas leve.
+:::
+
+## Las lluvias afectan a la cantidad de viajes?
+
+```{r }
+df_bici %>%
+  left_join(df_clima, "fecha") %>%
+  filter(lluvias_mm>0) %>%
+  mutate(
+    mes =lubridate::month(fecha),
+    lluvias = cut(lluvias_mm, breaks= c(0,5,20,50,300))
+    ) %>%
+  group_by(lluvias)%>%
+  summarize(
+    viajes = n_distinct(id_recorrido),
+  ) %>%
+  ggplot(aes(y=viajes, x = lluvias)) +
+  geom_col(fill = "#219ebc") +
+  geom_smooth() +
+  labs (
+    title = "Cantidad de viajes por lluvia",
+    x = "precipitacion (mm)", 
+    y = "Cantidad de Viajes"
+  )+ theme_classic() + theme(text = element_text(size = 32)) +
+  scale_x_discrete(labels = c("0 a 5mm", "5 a 20mm","20 a 50mm","50+mm"))
+```
+Se puede observar que mientras mas llueve hay menos viajes.
+
+## Viajes por dia de semana
+### General
+
+```{r}
+df_bici%>%
+  group_by(dia_semana = weekdays(fecha)) %>%
+  summarize(
+    cantidad_de_viajes = n_distinct(id_recorrido)
+  ) %>%
+  mutate(
+    dia_semana = factor(dia_semana,c("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"))
+  )%>%
+  ggplot(aes(x=dia_semana, y=cantidad_de_viajes)) +
+  geom_col(fill=c("#fb5607","#219ebc","#219ebc","#219ebc","#219ebc","#fb5607","#219ebc"))+
+  labs(
+    y="Cantidad de viajes",
+    title="Cantidad de viajes por dia de la semana",
+    subtitle="Todo 2022"
+  )+ theme_classic() +
+  theme(
+    text = element_text(size=32),
+    axis.title = element_blank()
+  )
+```
+
+Hay menos viajes los fines de semana, veamos si es todos los meses
+
+## Viajes por dia de semana
+### Mes a mes
+
+```{r}
+df_bici %>% 
+  mutate(
+  mes = format(fecha, "%b"),
+  dia_semana = weekdays(fecha)
+) %>%
+  group_by(mes, dia_semana) %>%
+  summarize(
+    cantidad_de_viajes = n_distinct(id_recorrido),
+
+  ) %>%
+  mutate(
+    dia_semana = factor(dia_semana,c("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")),
+    mes = factor(mes, c("ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "sep.", "oct.", "nov.", "dic."))
+  )%>%
+  ggplot(aes(x=dia_semana, y=cantidad_de_viajes)) +
+  geom_col(aes(fill=dia_semana))+
+  facet_wrap(vars(mes))+
+  labs(
+    y="Cantidad de viajes",
+    title="Cantidad de viajes por dia de la semana",
+    subtitle="Todo 2022",
+    legend.title = "Dia de la semana"
+  ) +
+  theme_classic() +
+  theme(
+    text = element_text(size=32),
+    axis.title = element_blank(),
+    axis.text.x = element_blank()
+  )
+```
+
+No varia mes a mes
+
+
+## Estaciones de destino
+
+![](Assets/img/Slide_destino_2022.png)
+
+## Primer semestre
+
+```{r warning=FALSE}
+theme_set(theme_minimal())
+
+theme_update(
+  plot.background = element_rect(fill = "#0b132b"),
+  panel.background = element_rect(fill = "#0b132b", colour = "#0b132b"),
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_blank(),
+  axis.text = element_blank(),
+  axis.title = element_blank(),
+  axis.ticks = element_blank(),
+  legend.text = element_text(color = "white"),
+  legend.title = element_text(color = "white")
+)
+graphs = map(1:6, ~plot_estacion_destino_mes(mes = .x))
+grid.arrange(grobs = graphs)
+```
+
+Podemos ver que en enero Plaza irlanda estaba primera, en febrero Guatemala, en marzo abril y mayo congreso y constitucion.
+
+## Segundo Semestre
+
+```{r warning=FALSE}
+theme_set(theme_minimal())
+
+theme_update(
+  plot.background = element_rect(fill = "#0b132b"),
+  panel.background = element_rect(fill = "#0b132b", colour = "#0b132b"),
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_blank(),
+  axis.text = element_blank(),
+  axis.title = element_blank(),
+  axis.ticks = element_blank(),
+  legend.text = element_text(color = "white"),
+  legend.title = element_text(color = "white")
+)
+graphs = map(7:12, ~plot_estacion_destino_mes(mes = .x))
+grid.arrange(grobs = graphs)
+```
+
+En Julio Malabia y Azucena eran las mas populares, Pacifico estuvo entre las mas populares de agosto a octubre y Constitucion Topeo en diciembre, es posible que se deba a que se creia que iba a pasar la selecciónpor ahi cuando ganaron el mundial.
+
+
+## {background-color="black" background-image="Assets/img/slide_origen_2022.png" background-size="contain"}
+
+
+<!-- ![](Assets/img/slide_origen_2022.png) -->
+
+## Estaciones de origen mas comunes, primer semestre
+
+```{r warning=FALSE}
+theme_set(theme_minimal())
+
+theme_update(
+  plot.background = element_rect(fill = "#0b132b"),
+  panel.background = element_rect(fill = "#0b132b", colour = "#0b132b"),
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_blank(),
+  axis.text = element_blank(),
+  axis.title = element_blank(),
+  axis.ticks = element_blank(),
+  legend.text = element_text(color = "white"),
+  legend.title = element_text(color = "white")
+)
+graphs = map(1:6, ~plot_estacion_origen_mes(mes = .x))
+grid.arrange(grobs = graphs)
+```
+
+Ya en el primer semestre podemos ver como varia, en enero la estacion de origen mas usada es es Pacifico, pero febrero ya esta compartiendo el puesto con Plaza Bolivia. En marzo la mas usada fue Plaza Italia, el abril Retiro, en mayo un empate entre Congreso y Facultad de medicina y en junio Acuña de figueroa fue la mas usada.
+
+## Estaciones de origen mas comunes, segundo semestre
+
+```{r warning=FALSE}
+theme_set(theme_minimal())
+
+theme_update(
+  plot.background = element_rect(fill = "#0b132b"),
+  panel.background = element_rect(fill = "#0b132b", colour = "#0b132b"),
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_blank(),
+  axis.text = element_blank(),
+  axis.title = element_blank(),
+  axis.ticks = element_blank(),
+  legend.text = element_text(color = "white"),
+  legend.title = element_text(color = "white")
+)
+graphs = map(7:12, ~plot_estacion_origen_mes(mes = .x))
+grid.arrange(grobs = graphs)
+```
+
+En el segundo semestre podemos ver mejor la tendecia que aparecia cuando tomabamos todo el año, a excepcion de julio y septiembre donde las mas usadas fueron Plaza Italia y Hospital de clinicas respectivamente, podemos ver que las 3 estaciones de origen mas usadas (Pacifico, Retiro y Constitucion) dominan en los otros meses.
+
+```{r}
+theme_set(theme_minimal())
+```
+
+## Duracion de viajes
+
+::: columns
+::: {.column width="30%"}
+```{r, fig.width=4, fig.height=8}
+#por cuanto tiempo duran los recorridos normalmente durante todo el año?
+df_bici %>%
+ggplot(aes(y=duracion_recorrido)) +
+  geom_boxplot(width=0.2, fill = "turquoise") +
+  geom_segment(aes(x = -0.05, xend = 0.05, y = min(df_bici$duracion_recorrido), yend = min(df_bici$duracion_recorrido)),) +
+  geom_segment(aes(x = -0.05, xend = 0.05, y = quantile(df_bici$duracion_recorrido, 0.75) + 1.5 * IQR(df_bici$duracion_recorrido), yend = quantile(df_bici$duracion_recorrido, 0.75) + 1.5 * IQR(df_bici$duracion_recorrido))) +
+  annotate("text",
+           x=0.08, y = quantile(df_bici$duracion_recorrido,0.75) + 50,
+           label = lubridate::seconds_to_period(
+             round(
+               quantile(df_bici$duracion_recorrido,0.75), digits=2)
+             ), size=7
+           )+
+  annotate("text",
+           x=0.08, y = quantile(df_bici$duracion_recorrido,0.5) + 50,
+           label = lubridate::seconds_to_period(
+             round(
+               quantile(df_bici$duracion_recorrido,0.5), digits=2)
+           ), size=7
+  )+
+  annotate("text",
+           x=0.08, y = quantile(df_bici$duracion_recorrido,0.25) + 50,
+           label = lubridate::seconds_to_period(
+             round(
+               quantile(df_bici$duracion_recorrido,0.25), digits=2)
+           ), size=7
+  ) +
+  annotate("text",
+           x=0.078, y = quantile(df_bici$duracion_recorrido, 0.75) + 1.5 * IQR(df_bici$duracion_recorrido) + 50,
+           label = lubridate::seconds_to_period(
+             round(quantile(df_bici$duracion_recorrido, 0.75) + 1.5 * IQR(df_bici$duracion_recorrido),0)
+           ) , size= 7
+  ) +
+  scale_x_continuous(breaks = c(-0.1,0,0.1)) +
+  scale_y_continuous(breaks = seq(from=300, to=3600, by=600),labels = function(x) {
+    return(lubridate::seconds_to_period(x)) } ) +
+  labs(
+    title = "Duracion del recorrido"
+  ) +
+  theme_minimal() +
+  theme(
+        axis.title =element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        text = element_text(size = 32)
+  )+
+  coord_fixed(ratio = 0.1/3600*6)
+```
+:::
+
+::: {.column width="70%"}
+-   Hay 348 outliers con mas de 45mins de recorrido
+
+-   la mayoria de las personas usa las bicis por menos de 45min
+
+-   El tiempo promedio de uso es de 18 mins 42segs.
+
+-   El tiempo medio de uso es de 16mins con 4 seg.
+
+-   En invierno el promedio y la media de duracion de recorridos es mas baja.
+
+-   En abril se ve que hubo una bajada en el tiempo de recorrido maximo y upper fence
+
+    ```{r , fig.width=12, fig.height=6}
+    palette = c("#f64f2a", "#d4cc21", "#80b918", "#71e2e5", "#2d728f", "#ffffff", "#000000")
+    # Y por mes?
+    df_bici %>%
+      group_by(month = lubridate::floor_date(fecha_origen_recorrido, 'month')) %>% #saco el mes
+      summarize(
+        upper_fence = quantile(duracion_recorrido, p=0.75) +1.5*IQR(duracion_recorrido),
+        lower_fence = quantile(duracion_recorrido, p=0.75) -1.5*IQR(duracion_recorrido),
+        mean_time = mean(duracion_recorrido),
+        median_time = median(duracion_recorrido),
+        max_time = max(duracion_recorrido)
+      ) %>%
+      ggplot(aes(x=month)) +
+      geom_line(aes(y=max_time, color =palette[5]),linewidth=2) +
+      geom_line(aes(y=upper_fence, color =palette[4]),linewidth=2) +
+      geom_line(aes(y=median_time, color=palette[3]),linewidth=2) +
+      geom_line(aes(y=mean_time, color=palette[2]),linewidth=2) +
+      geom_line(aes(y=lower_fence, color=palette[1]),linewidth=2) +
+      scale_color_manual( 
+        name = "Duracion del recorrido", 
+        values = palette[1:5], labels = c("Maximo", "Upper fence","Media","Promedio","Lower fence"),
+        guide = guide_legend(direction = "vertical", title.position = "top", title.hjust = 0.5)) +
+      scale_x_datetime(date_labels="%b", date_breaks  ="month")+
+      scale_y_continuous(breaks = seq(from=300, to=3600, by=600),labels = function(x) {
+        return(lubridate::seconds_to_period(x)) } ) +
+        theme_minimal() +
+      theme(
+        axis.title =element_blank(),
+        text = element_text(size = 32),
+        panel.background = element_rect(fill = "grey", colour = "#0b132b"),
+      )
+
+    ```
+:::
+:::
+
+## Duracion de Viajes
+
+Los viajes duran mas los fines de semana.
+
+```{r}
+
+# Crear la columna dia_semana
+df_bici <- df_bici %>%
+  mutate(
+    dia_semana = weekdays(fecha_origen_recorrido),
+    dia_semana = factor(dia_semana,c("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"))
+  )
+
+
+# Crear el gráfico
+ggplot(df_bici, aes(x=dia_semana, y = duracion_recorrido, fill = dia_semana)) +
+  geom_boxplot() +
+  scale_y_continuous(breaks = seq(from = 300, to = 3600, by = 600), 
+                     labels = function(x) {
+                       return(lubridate::seconds_to_period(x))
+                     })  + 
+  theme_light() +
+  theme(
+    axis.line.x.bottom = element_line(),
+    axis.title = element_blank(),
+    axis.text.x = element_text(),
+    axis.ticks.x = element_line(),
+    text = element_text(size = 32),
+    panel.background = element_rect(fill = "grey90", colour = "#0b132b"),
+    legend.position = "none"
+  ) +
+  scale_fill_manual(values=c("#219ebc", "#219ebc", "#219ebc", "#219ebc", "#219ebc", "#ffb703", "#ffb703"))
+
+```
+
+## El clima afecta la duracion de los recorridos?
+
+### Veamos si las variables climaticas afectan la duración de los viajes
+
+::: columns
+::: {.column width="50%"}
+```{r , fig.width=8, fig.height=4}
+require(ggbreak)
+
+df_bici %>%
+  left_join(df_clima, "fecha") %>%
+  filter(lluvias_mm>0) %>%
+  mutate(
+    mes =lubridate::month(fecha),
+    ) %>%
+  ggplot(aes(y=duracion_recorrido, x = lluvias_mm)) +
+  geom_point(alpha=0.2) +
+  geom_smooth(method = 'lm', se=F) +
+  scale_x_break(c(50,200)) +
+    scale_y_continuous(breaks = seq(from=300, to=3600, by=600),labels = function(x) {
+    return(lubridate::seconds_to_period(x)) } ) +
+  labs (
+    title = "Duracion en funcion de la precipitacion (mm)",
+    x = "precipitacion (mm)", 
+    y = "duracion recorrido"
+  ) + theme(text = element_text(size = 32))
+```
+
+Las lluvias no parecen afectar del todo a las duraciones de los viajes.
+:::
+
+::: {.column width="50%"}
+```{r , fig.width=8, fig.height=4}
+df_bici %>%
+  left_join(df_clima, "fecha") %>%
+  ggplot(aes(y=duracion_recorrido, x = temp_max)) +
+  geom_point(alpha=0.2) +
+  geom_smooth(method = 'lm',se=F) +
+    scale_y_continuous(breaks = seq(from=300, to=3600, by=600),labels = function(x) {
+    return(lubridate::seconds_to_period(x)) } ) +
+  labs (
+    title = "Duracion en funcion de la temperatura (°C)",
+    x = "temperatura (°C)", 
+    y = "duracion recorrido",
+  ) + theme(text = element_text(size = 32))
+
+```
+
+Hay una leve tendencia hacia mas duracion a mas calor, pero es muy pequeña.
+:::
+:::
+
+## La temperatura afecta la cantidad de viajes diarios?
+
+::: columns
+::: {.column width=50%}
+```{r}
+
+df_join <- df_bici %>%
+  inner_join(df_clima,by="fecha") %>%
+  select(temp_prom,temp_max,temp_min) %>%
+  mutate(temp_prom= round(temp_prom),
+         temp_max=round(temp_max),
+         temp_min=round(temp_min))
+
+ggplot(df_join,mapping=aes(x=temp_prom))+
+  geom_histogram(mapping=aes(x=temp_prom),stat = "count",binwidth = 5,color="black",fill="aquamarine")+
+  labs(title = "Viajes segun temperatura promedio",x="Temperatura (°C)",y="Cantidad de viajes") + 
+  theme(text = element_text(size = 32))
+
+ggplot(df_join,mapping=aes(x=temp_max))+
+  geom_histogram(bins=5,stat = "count",color="black",fill="brown1")+
+  labs(title = "Viajes segun temperatura máxima",x="Temperatura (°C)",y="Cantidad de viajes") + 
+  theme(text = element_text(size = 32))
+
+
+
+
+```
+:::
+::: {.column width=50%}
+
+```{r}
+df_bici %>%
+  inner_join(df_clima,by="fecha") %>%
+  select(temp_prom,temp_max,temp_min) %>%
+  mutate(temp_prom= round(temp_prom),
+         temp_max=round(temp_max),
+         temp_min=round(temp_min)) %>%
+ggplot(df_join,mapping=aes(x=temp_min))+
+  geom_histogram(stat = "count",fill="turquoise",color="black")+
+  labs(title = "Viajes segun temperatura mínima",x="Temperatura (°C)",y="Cantidad de viajes") + 
+  theme(text = element_text(size = 32))
+```
+
+En conclusión, se puede ver una relación entre la temperatura y la cantidad de viajes ese día.
+
+En particular, se puede observar que si la temperatura promedio es menor a 10°C o mayor a 25°C, la cantidad de viajes ese día disminuye.
+:::
+:::
+
+# Usuarios
+
+## Cantidad de viajes vs cantidad de usuarios
+
+```{r}
+
+############## Cantidad de usuarios vs usuarios unicos ########
+
+
+# Calculamos la cantidad de viajes por género
+viajes_por_genero <- df_bici %>%
+  filter(!is.na(genero)) %>%
+  group_by(genero) %>%
+  summarise(cantidad_viajes = n())
+
+# Calculamos la cantidad de usuarios únicos por género
+usuarios_unicos_por_genero <- df_bici %>%
+  filter(!is.na(genero)) %>%
+  distinct(id_usuario, .keep_all = TRUE) %>%
+  group_by(genero) %>%
+  summarise(cantidad_usuarios = n_distinct(id_usuario))
+
+# Combinamos los datos
+datos_comparacion <- merge(viajes_por_genero, usuarios_unicos_por_genero, by = "genero")
+
+
+ggplot(datos_comparacion, aes(x = genero)) +
+  geom_bar(aes(y = cantidad_viajes, fill = "Cantidad de Viajes"), stat = "identity", width = 0.4) +
+  geom_bar(aes(y = cantidad_usuarios, fill = "Usuarios Únicos"), stat = "identity", width = 0.4) +
+  labs(title = "Comparación de Viajes y Usuarios Únicos por Género",
+       y = "Cantidad",
+       x = "Género",
+       fill = "Variable") +
+  theme_minimal() +
+  scale_fill_manual(values = c("Cantidad de Viajes" = "#78c679", "Usuarios Únicos" = "black")) +
+  theme(plot.title = element_text(color = "black", face = "bold", hjust = 0.5))
+
+```
+
+Podemos observar que el género masculino tiene una mayor proporción de repetición de viajes
+
+## Preferencia de modelo de bicicletas
+### General
+
+Vamos a analizar cuales son los modelos de bicicletas mas utilizados y si hay algún patrón relacionado con otras variables
+
+```{r}
+# Left join de df_bici con df_clima por la columna "fecha"
+df_joineado <- left_join(df_bici, df_clima, by = "fecha")
+
+# Contamos la cant de veces que se usó cada modelo de bicicleta
+modelo_counts <- df_joineado %>%
+  group_by(modelo_bicicleta) %>%
+  summarise(count = n())
+
+# Creamos el gráfico de barras con colores personalizados
+ggplot(modelo_counts, aes(x = modelo_bicicleta, y = count, fill = modelo_bicicleta)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Modelo de Bicicleta", y = "Cantidad de Usos", title = "Uso de Modelos de Bicicleta") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text = element_text(color = "black"),
+        axis.title = element_text(color = "black", size = 12, face = "bold"),
+        plot.title = element_text(color = "black", size = 14, face = "bold", hjust = 0.5), # Ajuste para centrar el título
+        legend.position = "none") +
+  scale_fill_manual(values = c("FIT" = "orange", "ICONIC" = "#6baed6", "OTHER" = "#78c679"))  # Colores personalizados
+
+```
+No se ve diferencia mas que el modelo mas utilizado es el modelo FIT.
+
+## Preferencia de modelo de bicicletas
+### Por dia de la semana
+
+Analicemos el uso de cada modelo para ver si hay algun dia de la semana en que un modelo sea mas elegido que otro
+
+```{r}
+# Convertimos la columna de fecha a formato Date para poder graficar
+df_bici$fecha <- as.Date(df_bici$fecha)
+
+# Agregamos una columna para el día de la semana
+df_bici <- df_bici %>%
+  mutate(dia_semana = weekdays(fecha))
+
+# Calculamos la cant de cada modelo por día de la semana
+modelo_por_dia <- df_bici %>%
+  group_by(dia_semana, modelo_bicicleta) %>%
+  summarise(count = n())
+
+# Creamos el gráfico de barras apiladas
+ggplot(modelo_por_dia, aes(x = dia_semana, y = count, fill = modelo_bicicleta)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Día de la Semana", y = "Cantidad de Usos", title = "Modelo de bicicleta por dia de la semana") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text = element_text(color = "black"),
+        axis.title = element_text(color = "black", size = 12, face = "bold"),
+        plot.title = element_text(color = "black", size = 14, face = "bold", hjust = 0.5),
+        legend.title = element_blank()) +
+  scale_fill_manual(values = c("FIT" = "orange", "ICONIC" = "#6baed6", "OTHER" = "#78c679"))  
+```
+
+La proporción parece mantenerse independientemente del dia de la semana.
+
+## Preferencia de modelo de bicicletas
+### Por Genero
+
+Veamos si hay algún modelo que sea preferido en base al género.
+
+```{r}
+# Agrupamos por modelo de bicicleta y género, contamos la cantidad de usuarios
+modelo_genero_counts <- df_bici %>%
+  group_by(modelo_bicicleta, genero) %>%
+  summarise(count = n())
+
+
+
+# Creamos el gráfico de barras apiladas con colores personalizados
+ggplot(modelo_genero_counts, aes(x = modelo_bicicleta, y = count, fill = genero)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Modelo de Bicicleta", y = "Cantidad de Usuarios", title = "Distribución de Modelos por Género") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text = element_text(color = "black"),
+        axis.title = element_text(color = "black", size = 12, face = "bold"),
+        plot.title = element_text(color = "black", size = 14, face = "bold", hjust = 0.5),
+        legend.title = element_blank()) +
+  scale_fill_manual(values = c("MALE" = "#6baed6", "FEMALE" = "#f768a1", "OTHER" = "#78c679"))  # Colores personalizados
+
+```
+La proporción parece mantenerse independientemente al genero.
+
+
+## Conclusión
+
+Este análisis nos ha brindado una comprensión valiosa sobre la utilización del sistema Ecobici en la Ciudad de Buenos Aires durante el año 2022. A continuación, se presentan algunos hallazgos significativos derivados del análisis:
+
+-  La franja horaria con mayor concentración de viajes es entre las 16:00 y las 18:00 horas. Este patrón se repite en todos los meses, excepto en enero. Es probable que esto se deba a la cantidad de lluvias, así como a un aumento significativo de la temperatura, factores que hemos observado que influyen en la cantidad de viajes. Es posible que las vacaciones también tengan un impacto temporal, aunque no disponemos de datos sobre esta variable.
+
+-  La cantidad de viajes es mayor durante las temporadas de otoño y primavera, mientras que disminuye durante el invierno y el verano. Según nuestras observaciones, tanto las temperaturas extremadamente altas como bajas afectan la cantidad de viajes.
+
+-  La mayoría de los viajes se concentran en la zona noreste y en el centro de la ciudad.
+
+-  Las estaciones de salida más comunes son Constitución, Retiro y Pacífico, lo que indica un uso significativo de la combinación tren-bicicleta.
+
+-  La duración promedio de un viaje es de 18 minutos y 42 segundos. Es más probable que las personas de género masculino realicen viajes repetidos.
+
+-  Durante los fines de semana, hay menos viajes, pero estos son de mayor duración.
+
+-  Hay mas viajes con el modelo FIT, y esto mantiene por el día de la semana y por el género.
+
+Esta integración de datos y el análisis resultante pueden ser fundamentales para informar estrategias futuras y mejorar la eficiencia y accesibilidad del sistema Ecobici en la ciudad.
+
+## {background-color="black" background-image="Assets/img/yapa.jpg" background-size="contain"}

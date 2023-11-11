@@ -13,4 +13,96 @@ author: "Gabriel Szerman"
 
 -   Resumir la teoría conceptual de los algoritmos de regresión lineal y polinomial, y de clasificación por desicion tree y knn. Leer las clases teóricas y todos los archivos dados en clase para incorporar al resumen
 
+-   Resumir teoría sobre estadística descriptiva, y que tipos de gráficos conviene utilizar en cada caso
+
 -   Resumir el código y lo mas utilizado en r para trabajar esos algoritmos
+
+-   Repasar el código y la teoría de los 2 trabajos prácticos de la materia
+
+-   Elaborar la hoja resumen
+
+## Guia 1
+
+```{r}
+d = data.frame(x = 1:5, y= letters[1:5], z = c(T,T,F,T,F))
+
+# El dataframe 'd' es una fila de columnas
+d
+```
+
+```{r}
+devolver_moda = function(x){
+  
+  tabla_frecuencias = table(x)
+  
+  numero_columna = which.max(tabla_frecuencias)
+  
+  nombres_tabla_frecuencias = names(tabla_frecuencias)
+  
+  
+  return(nombres_tabla_frecuencias[numero_columna])
+}
+
+colores <- as.factor(c('red', 'green', 'red', 'black', 'yellow' ,'green', 'blue','green','blue', 'blue','green'))
+
+
+devolver_moda(colores)
+```
+
+```{r}
+devolver_desvio_standard = function(array){
+  
+  # La funcion es V = sumar (xi-u)^2 / length(x)
+  # y el desvio standard es d = sqrt(V)
+  
+  
+  # Hago xi - u
+  
+  xi_menos_u = array - mean(array)
+  
+  termino_arriba = xi_menos_u^2
+  
+  varianza = sum(termino_arriba) / length(array)
+  
+  desvio_standard = sqrt(varianza)
+  
+  
+  return(desvio_standard)
+  
+}
+
+
+
+devolver_desvio_standard(c(10,20,21))
+
+sd(c(10,20,21))
+```
+
+```{r}
+# Función para calcular el desvío estándar
+mi_desvio <- function(x) {
+  n <- length(x)
+  mean_x <- mean(x)
+  squared_diffs <- (x - mean_x)^2
+  variance <- sum(squared_diffs) / n
+  std_dev <- sqrt(variance)
+  return(std_dev)
+}
+
+# Datos de ejemplo
+data <- c(3, 4, 6, 8, 10)
+
+# Calcular el desvío estándar usando tu función
+mi_resultado <- mi_desvio(data)
+print(paste("Mi desvío estándar:", mi_resultado))
+
+# Calcular el desvío estándar usando la función sd() de R-base
+sd_resultado <- sd(data)
+print(paste("Resultado de sd() de R-base:", sd_resultado))
+```
+
+## Guia 2
+
+```{r}
+
+```

@@ -1,0 +1,512 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+
+#1.1 Cargar la librería palmerpenguins. Usando el dataset penguins y borrando las observaciones que tengan algún NA responder estas preguntas.
+
+```{r}
+
+library("palmerpenguins")
+library("tidyverse")
+```
+
+
+```{r}
+head(penguins)
+
+penguins_clean <- na.omit(penguins)
+
+head(penguins_clean)
+```
+
+# 1.2 Realizar un gráfico de dispersión que muestre la relación entre el ancho y el largo del pico de los pinguinos de la especie Adelie (columnas bill_depth_mm y bill_length_mm).
+
+
+```{r}
+ggplot(data=penguins_clean, aes(x=penguins_clean$bill_depth_mm, y= bill_length_mm)) + geom_point() + labs(title="Profundidad del pico vs Longitud del pico",
+       x = "Profundidad del pico",
+       y = "Longitud del pico")
+
+```
+
+
+```{r}
+# 1.3 Escribir la ecuación del modelo de regresión lineal simple que tenga como variable respuesta el largo del pico y como explicativa al ancho (usar lm() para calcular los coeficientes del modelo)
+
+
+# IMPORTANTE Le pasé   y  ~  x
+
+model <- lm(bill_length_mm ~ bill_depth_mm, data = penguins_clean)
+
+# model ahora tiene coeficientes (Tengo que usar coef(model))
+
+
+
+# Mostrar un resumen del modelo
+coef(model)
+
+
+# Me retorna 
+# (Intercept) x
+# 54.9      -0.64
+
+# Osea que si bien se carga y->x , el resultado de coef mantiene ese orden
+
+```
+
+
+
+```{r}
+
+#1.4 ¿Qué unidades tienen la ordenada al origen y la pendiente? ¿Cómo se interpretan los valores estimados de la ordenada al origen y la pendiente?
+
+
+
+# Unidades de la ordenada al origen (Intercepto):
+# 
+# Las unidades de la ordenada al origen son las mismas que la variable de respuesta (en este caso, la longitud del pico, que parece estar en milímetros, según los nombres de las variables en tu contexto).
+# En la fórmula: 
+# largo
+# =
+# Intercepto
+# + 
+# Coeficiente
+# ×
+# bill_depth_mm
+# largo=Intercepto+Coeficiente×bill_depth_mm, las unidades de la ordenada al origen serán las mismas que las de 
+# largo
+# largo, que en este caso parecen ser milímetros (mm).
+# Unidades de la pendiente:
+# 
+# La pendiente (en este caso, 
+# −
+# 0.64
+# −0.64) tiene unidades de la variable de respuesta por unidad de la variable explicativa.
+# Para tu fórmula, la pendiente tiene unidades de longitud del pico por milímetro (mm/mm). Esto significa que representa cuántas unidades cambia la longitud del pico (en milímetros) por cada unidad de cambio en el ancho del pico (también en milímetros).
+# Interpretación:
+# 
+# Intercepto: El intercepto (
+# 54.9
+# 54.9 en tu caso) es la estimación de la longitud del pico cuando el ancho del pico es 
+# 0
+# 0 (lo cual puede no tener un significado práctico en este contexto). En general, es importante considerar si esta interpretación tiene sentido para tu problema en particular, ya que en muchos casos no tiene sentido interpretar la longitud del pico cuando el ancho es 
+# 0
+# 0, y la interpretación se centra más en la pendiente.
+# 
+# Pendiente: La pendiente (
+# −
+# 0.64
+# −0.64 en tu caso) indica que, en promedio, por cada milímetro de aumento en el ancho del pico, la longitud del pico disminuye en 
+# 0.64
+# 0.64 milímetros (mm). Es decir, hay una relación negativa entre la longitud del pico y el ancho del pico: a medida que el ancho del pico aumenta, la longitud del pico tiende a disminuir.
+
+
+
+
+
+```
+
+
+
+```{r}
+#1.5 ¿Cuál es el error cuadrático medio del modelo? ¿Cuál es el coeficiente de determinación (R^2)
+# Programar una función que calcule el error cuadrático medio y R^2
+
+
+calcular_metricas <- function(modelo, datos, coly) {
+  
+  # Predicciones del modelo
+  predicciones <- predict(modelo, datos)
+  
+  # Calcular el Error Cuadrático Medio (ECM)
+  MSE <- mean((datos[[coly]] - predicciones)^2)
+  
+  # Calcular el Coeficiente de Determinación (R^2)
+  VARIABILIDAD_EXPLICADA <- sum((predicciones - mean(datos[[coly]]))^2)
+  VARIABILIDAD_TOTAL <- sum((datos[[coly]] - mean(datos[[coly]]))^2)
+  R2 <- VARIABILIDAD_EXPLICADA / VARIABILIDAD_TOTAL
+  
+  # Retornar los resultados
+  return(list(MSE = MSE, R2 = R2))
+}
+
+
+
+
+print(calcular_metricas(model,penguins_clean,'bill_length_mm'))
+
+# https://www.youtube.com/watch?v=tc4KcnG4Elc
+
+
+
+```
+
+
+
+```{r}
+#1.6 Suponga que se encuentra un pinguino de la especie Adelie que tiene un pico de 2 cm de ancho. El dato del largo del pico se perdió. Usando el modelo lineal simple, ¿qué valor de largo de pico tendría ese pinguino? Si se encuentra un pinguino bebé con un pico de 5mm de ancho, ¿sería adecuado usar este modelo para conocer el largo del pico dado su ancho?
+
+
+
+# Convertir ancho del pico de cm a mm
+ancho_mm <- 2 * 10
+
+# Calcular la longitud del pico predicha
+largo_predicho <- 54.9 - 0.64 * ancho_mm
+
+# Convertir ancho del pico de mm a cm
+ancho_cm <- 5 / 10
+
+# Calcular la longitud del pico predicha para el pinguino bebé
+largo_predicho_bebe <- 54.9 - 0.64 * ancho_cm * 10  # Convertimos a mm
+
+
+```
+
+
+```{r}
+#1.7 Repetir 1.3 para los pinguinos de las otras 3 especies.
+
+# En el ejercicio 1.3 que hice me olvidé de filtrar, pero seria hacer todo lo mismo con un where
+
+
+# Ajustar modelos lineales para cada especie
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Longitud de la aleta (mm)", y = "Masa corporal (g)", color = "Especie") + theme_minimal()
+
+```
+
+
+```{r}
+
+
+
+ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Longitud del pico (mm)", y = "Ancho del pico (mm)", color = "Especie") +
+  theme_minimal()
+
+```
+
+```{r}
+# Ajustar modelos lineales para cada especie
+model_adelie <- lm(bill_length_mm ~ bill_depth_mm, data = penguins_clean %>% filter(species == "Adelie"))
+model_chinstrap <- lm(bill_length_mm ~ bill_depth_mm, data = penguins_clean %>% filter(species == "Chinstrap"))
+model_gentoo <- lm(bill_length_mm ~ bill_depth_mm, data = penguins_clean %>% filter(species == "Gentoo"))
+
+
+
+
+# Crear el gráfico de dispersión con los modelos lineales
+ggplot(penguins_clean, aes(x = bill_depth_mm, y = bill_length_mm, color = species)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(aes(group = 1), method = "lm", formula = y ~ x, 
+              se = FALSE, color = "black", linetype = "dashed") +
+  geom_abline(intercept = coef(model_adelie)[1], slope = coef(model_adelie)[2], 
+              color = "red", linetype = "solid") +
+  geom_abline(intercept = coef(model_chinstrap)[1], slope = coef(model_chinstrap)[2], 
+              color = "green", linetype = "solid") +
+  geom_abline(intercept = coef(model_gentoo)[1], slope = coef(model_gentoo)[2], 
+              color = "blue", linetype = "solid") +
+  labs(x = "Ancho del pico (mm)", y = "Largo del pico (mm)",
+       color = "Especie") +
+  theme_minimal()
+```
+
+```{r}
+# Dejé pendiente los ejercicios 1.9, 1.10 y 1.11 que hablaban de generar una nueva columna desplazada y hacer el modelado lineal partiendo de esa columna desplazada
+```
+
+
+```{r}
+# Ejercicio 2
+#2.1 Utilizando la librería mtcars incluida en R-base, que contiene datos sobre automóviles, crear un gráfico para visualizar la relación entre la potencia del motor (columna hp) y la eficiencia en millas por galón (columna mpg). ¿Qué patrón se observa?
+
+
+# Crear el gráfico de dispersión
+ggplot(mtcars, aes(x = hp, y = mpg)) +
+  geom_point() +
+  labs(x = "Potencia del motor (hp)", y = "Eficiencia (mpg)", title = "Relación entre hp y mpg")
+
+
+```
+
+
+```{r}
+#2.2 Realiza una regresión lineal simple para predecir la eficiencia en millas por galón en función de la potencia del motor, ¿Cuál es el valor del coeficiente de determinación ()?
+  
+# Realizar la regresión lineal
+modelo <- lm(mpg ~ hp, data = mtcars)
+
+# Obtener el coeficiente de determinación (R cuadrado)
+coefficient_of_determination <- summary(modelo)$r.squared
+coefficient_of_determination
+
+
+
+```
+```{r}
+# Probemos usar la función de arriba
+
+calcular_metricas <- function(modelo, datos, coly) {
+  
+  # Predicciones del modelo
+  predicciones <- predict(modelo, datos)
+  
+  # Calcular el Error Cuadrático Medio (ECM)
+  MSE <- mean((datos[[coly]] - predicciones)^2)
+  
+  # Calcular el Coeficiente de Determinación (R^2)
+  VARIABILIDAD_EXPLICADA <- sum((predicciones - mean(datos[[coly]]))^2)
+  VARIABILIDAD_TOTAL <- sum((datos[[coly]] - mean(datos[[coly]]))^2)
+  R2 <- VARIABILIDAD_EXPLICADA / VARIABILIDAD_TOTAL
+  
+  # Retornar los resultados
+  return(list(MSE = MSE, R2 = R2))
+}
+
+
+
+print(calcular_metricas(modelo,mtcars,"mpg"))
+```
+```{r}
+(coef(modelo))  # Intercept (Ordenada al origen 30.09 )  . pendiente -0.07
+
+# y = 30.09 - 0.07 x
+# mpg = 30.09 - 0.07 hp
+```
+
+```{r}
+ggplot(data=mtcars,aes(x=hp,y=mpg)) + geom_point() + geom_smooth(method= "lm", se = FALSE)
+
+```
+
+
+
+
+```{r}
+#2.3 Discutir si parece adecuado un modelo lineal para describir esta relación.
+
+
+# Para mi si. aunque los outliers quedan afuera, y se tiene que tener en cuenta de que los valores mpg tienen que ser <= 0 , y la aproximación lineal daría valores negativos de mpg para valores de hp muy altos
+
+
+```
+
+
+
+
+
+```{r}
+
+# 3.1 Cargar el conjunto de datos iris, incluida en R-base, que contiene información sobre especies de flores y sus características. Intenta realizar una regresión lineal simple para predecir la longitud del sépalo (columna Sepal.Length) en función del ancho del sépalo (columna Sepal.Width). ¿Cuál es el valor del coeficiente de determinación (Lo salteo porque es lo mismo que el anterior)
+
+
+#R^2 = 0 implica que el modelo no explica nada de la variabilidad de los datos alrededor de la media de la variable dependiente. Es decir, el modelo no proporciona ninguna información para predecir la variable dependiente a partir de la variable independiente(s).
+
+#R^2 = 1 implica que el modelo explica toda la variabilidad de los datos alrededor de la media de la variable dependiente. Es decir, el modelo se ajusta perfectamente a los datos y puede predecir la variable dependiente sin error.
+
+
+```
+
+
+
+```{r}
+#4.1 Cargar la librería gapminder. Seleccionar datos de un año particular y realizar un gráfico de dispersión que muestre la relación entre el PIB per cápita (columna gdpPercap) y la esperanza de vida (columna lifeExp).
+
+# Cargar la librería gapminder
+library(gapminder)
+
+# Seleccionar datos para un año particular (ejemplo: 2007)
+datos_2007 <- gapminder[gapminder$year == 2007,]
+
+# Crear el gráfico de dispersión
+plot(datos_2007$gdpPercap, datos_2007$lifeExp,
+     xlab = "PIB per cápita",
+     ylab = "Esperanza de vida",
+     main = "Relación entre PIB per cápita y Esperanza de vida (año 2007)")
+
+
+```
+
+```{r}
+#4.2 Realizar una regresión lineal simple para predecir la esperanza de vida en función del PBI per cápita para 1997 en el continente americano.
+
+# Filtrar datos para el año 1997 y continente americano
+datos_1997_americano <- subset(gapminder, year == 1997 & continent == "Americas")
+
+# Realizar la regresión lineal
+modelo <- lm(lifeExp ~ gdpPercap, data = datos_1997_americano)
+
+# Mostrar el resumen del modelo
+summary(modelo)
+coef(modelo) # 
+
+# Tiene pendiente casi 0 , osea que casi no tiene inclinación. Pero como son tantos años la inclinación se ve
+```
+
+```{r}
+ggplot(data=datos_1997_americano, aes(x=gdpPercap,y=lifeExp)) + geom_point() + geom_smooth(method = "lm")
+```
+
+```{r}
+# Coeficientes del modelo
+ordenada_origen <- 67.809551691
+pendiente <- 0.000375837
+
+# Crear el gráfico de dispersión y agregar la línea de regresión con los coeficientes específicos
+ggplot(data = datos_1997_americano, aes(x = gdpPercap, y = lifeExp)) +
+  geom_point() +
+  geom_abline(intercept = ordenada_origen, slope = pendiente, color = "blue", linetype = "dashed") +
+  labs(x = "PIB per cápita", y = "Esperanza de vida", 
+       title = "Regresión lineal con coeficientes específicos") +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+#4.3 Discutir si el modelo es adecuado para describir esta relación.
+
+#Para evaluar la adecuación del modelo, debes analizar la significancia de los coeficientes y el coeficiente de determinación (R^2). Si los coeficientes son significativos y el R^2 es alto, indica que el modelo puede ser adecuado para describir la relación entre la esperanza de vida y el PIB per cápita.
+
+
+
+
+
+```
+
+
+```{r}
+#4.4 Calcular el error estándar de la estimación (SEE) para evaluar la precisión del modelo de regresión.
+
+# Reutilicemos la función de arriba
+
+calcular_metricas <- function(modelo, datos, coly) {
+  
+  # Predicciones del modelo
+  predicciones <- predict(modelo, datos)
+  
+  # Calcular el Error Cuadrático Medio (ECM)
+  MSE <- mean((datos[[coly]] - predicciones)^2)
+  
+  # Calcular el Coeficiente de Determinación (R^2)
+  VARIABILIDAD_EXPLICADA <- sum((predicciones - mean(datos[[coly]]))^2)
+  VARIABILIDAD_TOTAL <- sum((datos[[coly]] - mean(datos[[coly]]))^2)
+  R2 <- VARIABILIDAD_EXPLICADA / VARIABILIDAD_TOTAL
+  
+  # Retornar los resultados
+  return(list(MSE = MSE, R2 = R2))
+}
+
+modelo <- lm(lifeExp ~ gdpPercap, data = datos_1997_americano)
+
+
+print(calcular_metricas(modelo,datos_1997_americano,"lifeExp"))
+
+
+
+```
+```{r}
+# MSE = Mean Squared Eror (Error cuadrático medio). En nuestro caso caso, tenemos un ECM de 14.52. Esto significa que, en promedio, las predicciones del modelo difieren de los valores reales en aproximadamente 14.52 unidades al cuadrado.
+
+#Para interpretar el ECM, cuanto menor sea el valor, mejor será la capacidad predictiva del modelo. Un ECM más bajo indica que las predicciones del modelo están más cerca de los valores reales, lo que implica que el modelo está haciendo predicciones más precisas.
+
+#Es importante tener en cuenta que el ECM no proporciona una interpretación intuitiva en términos de las unidades originales de la variable que se está prediciendo, ya que está en unidades cuadradas. Por lo tanto, a menudo se toma la raíz cuadrada del ECM para obtener el Error Estándar de la Estimación (SME o en inglés RMSE, Root Mean Squared Error), que está en las mismas unidades que la variable original y es más fácil de interpretar. Para calcular el SME, simplemente tomas la raíz cuadrada del ECM:
+
+
+```
+
+```{r}
+#4.5 Repetir 4.2 para un modelo pero utilizando como variable respuesta el logaritmo de la esperanza de vida y como variable explicativa el logaritmo del PBI per capita. Discutir la conveniencia de usar el logaritmo de las variables.
+
+
+# Realizar la regresión con logaritmos de las variables
+modelo_log <- lm(log(lifeExp) ~ log(gdpPercap), data = datos_1997_americano)
+
+# Mostrar el resumen del modelo con logaritmos
+coef(modelo_log)
+
+
+
+```
+
+```{r}
+# Coeficientes del modelo
+ordenada_origen <- 3.56894627     
+pendiente <- 0.07854498 
+
+# Aplicar logaritmo a las variables
+log_gdpPercap <- log(datos_1997_americano$gdpPercap)
+log_lifeExp <- log(datos_1997_americano$lifeExp)
+
+# Crear el gráfico de dispersión y agregar la línea de regresión con los coeficientes específicos
+ggplot(data = datos_1997_americano, aes(x = log_gdpPercap, y = log_lifeExp)) +
+  geom_point() +
+  geom_abline(intercept = ordenada_origen, slope = pendiente, color = "blue", linetype = "dashed") +
+  labs(x = "Log PIB per cápita", y = "Log Esperanza de vida", 
+       title = "Regresión lineal con coeficientes específicos") +
+  theme_minimal()
+
+
+```
+
+
+
+```{r}
+# Con el logaritmo de las dos columnas la aproximación lineal es mucho mas eficiente
+# Veamos el R^2
+
+
+calcular_metricas <- function(modelo, datos, coly) {
+  
+  # Predicciones del modelo
+  predicciones <- predict(modelo, datos)
+  
+  # Calcular el Error Cuadrático Medio (ECM)
+  MSE <- mean((datos[[coly]] - predicciones)^2)
+  
+  # Calcular el Coeficiente de Determinación (R^2)
+  VARIABILIDAD_EXPLICADA <- sum((predicciones - mean(datos[[coly]]))^2)
+  VARIABILIDAD_TOTAL <- sum((datos[[coly]] - mean(datos[[coly]]))^2)
+  R2 <- VARIABILIDAD_EXPLICADA / VARIABILIDAD_TOTAL
+  
+  # Retornar los resultados
+  return(list(MSE = MSE, R2 = R2))
+}
+
+modelo_log <- lm(log(lifeExp) ~ log(gdpPercap), data = datos_1997_americano)
+
+
+datos_1997_americano$loglifeExp = log(datos_1997_americano$lifeExp)
+
+
+
+
+print(calcular_metricas(modelo_log,datos_1997_americano,"loglifeExp"))
+```
+```{r}
+# Ahora R^2 pasó a ser de 0.62 osea que es mucho mejor que el 0.37 anterior
+```
+

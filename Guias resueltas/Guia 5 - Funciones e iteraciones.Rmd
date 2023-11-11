@@ -1,0 +1,846 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+
+```{r}
+
+library(dplyr)
+
+set.seed(1010)
+aux = rchisq(100, df=2)
+
+dfEstudiantes = tibble(legajo = paste0("LE_",1:100), 
+                       edad = as.integer((80-18) * aux/max(aux) + 18),
+                       carrera = sample(c("Ciencias Físicas",
+                                          "Ciencias Matemáticas",
+                                          "Ciencias de Datos",
+                                          "Paleontología",
+                                          "Ciencias Biológicas",
+                                          "Ciencias de la Atmósfera",
+                                          "Ciencias de la Computación",
+                                          "Ciencias Geológicas",
+                                          "Ciencias Químicas",
+                                          "Ciencia y Tecnología de Alimentos",
+                                          "Oceanografía"),
+                                        100, replace = T))
+
+dfNotas = rbind(tibble(legajo = sample(paste0("LE_",1:50),30),
+                       nota = as.integer(runif(30,min=2,max=10)),
+                       materia = "Biología"),
+                tibble(legajo = sample(paste0("LE_",1:100),50),
+                       nota = as.integer(runif(50,min=2,max=10)),
+                       materia = "Matemática"))
+```
+
+```{r}
+dfNotas
+```
+
+```{r}
+dfEstudiantes
+```
+
+```{r}
+#1.1 Cuál es la nota promedio por carrera de la materia Biología?
+
+res1 = dfNotas %>%  group_by(materia) %>% summarise(prom_nota = mean(nota)) %>% filter(materia == 'Biología') 
+res1
+```
+
+```{r}
+#1.2 Cuál es la cantidad de estudiantes por carrera que no rindió ninguno de los dos exámenes?
+res2 = dfEstudiantes %>% left_join(dfNotas, by = 'legajo')  %>% filter(is.na(materia)) %>% group_by(carrera) %>% summarise(cant_estudiantes_sin_rendir = n())
+
+res2
+
+```
+
+
+```{r}
+# 1.3 Cuál es la edad promedio de los estudiantes que rindieron al menos uno de los dos exámenes? Tener en cuenta que un/a mismo/a estudiante puede haber rendido más de un examen. Revisar el uso de la función distinct().
+
+res3 = dfEstudiantes %>% inner_join(dfNotas, by = 'legajo') %>% select(legajo,edad) %>% distinct() %>% summarise(mean(edad))
+#summarise(distinct(legajo), edad_prom = mean(edad)) %>% group_by(legajo) %>% summarise
+
+res3
+
+
+```
+
+```{r}
+# 1.4 Generar un gráfico que permita visualizar la distribución de notas por grupo etario y materia, considerando los grupos etarios: [18, 21], (21,27] y [27, 80).
+
+library(ggplot2)
+
+dfEstudiantes %>% mutate(edadCat = cut_number(edad,3)) %>%
+inner_join(dfNotas, by= "legajo") %>% group_by(materia, edadCat) %>% 
+ggplot(aes(x=edadCat, y=nota, colour=materia)) + geom_boxplot()
+```
+
+
+```{r}
+# 2.1 Escribir una función que calcule el rango de un vector numérico. Comparar con la función range() de R.
+
+
+funcion_calcular_rango = function(vector){
+  rango = max(vector) - min(vector)
+  return(rango)
+}
+
+vector_prueba = c(10,17,25)
+
+print(funcion_calcular_rango(vector_prueba))
+
+```
+
+```{r}
+#2.2 Escribir una función que calcule la media de un vector numérico. Comparar con la función mean() de R.
+
+print_vector = function(vector){   # funcion de prueba para probar for
+  for(i in vector)
+    print(i)
+}
+
+vector = c(1,2,5,7,9,11)
+print_vector(vector)
+
+
+# Ejercicio
+
+
+media_vector <- function(vector) {
+  sumatoria <- sum(vector)
+  tamanio_vector <- length(vector)
+  
+  return(sumatoria / tamanio_vector)
+}
+
+# Ejemplo de un vector numérico
+mi_vector <- c(10, 5, 3, 8, 12, 15)
+
+# Calcular el valor medio usando nuestra función
+valor_medio <- media_vector(mi_vector)
+
+# Imprimir el valor medio
+print(paste("Valor medio:", valor_medio, ". Fin del ejercicio."))
+
+
+```
+
+
+```{r}
+# 2.3 Escribir una función que calcule la proporción de valores faltantes (NA) en un vector numérico.
+vector <- c(10, 5, NA, NA, 12, 15)
+
+
+proporcion_na = function(vector){
+  cant_na = length(vector[is.na(vector)])
+  tam_vector = length(vector)
+  
+  return = (cant_na/tam_vector)
+  
+}
+
+
+
+print(proporcion_na(vector))
+
+
+```
+```{r}
+#2.4 Modiicar la función de 2.3 para que reemplace los NA con un valor específico numérico (-1 por ejemplo).
+
+proporcion_num = function(vector,num){
+  cant_num = length(vector[(!is.na(vector)) & vector==num]) # Si no descarto los NA, me los contabiliza
+  tam_vector = length(vector)
+  
+  return = (cant_num/tam_vector)
+  
+}
+
+vector <- c(10, 5, NA, NA, 12, 15)
+numero = 12
+
+print(proporcion_num(vector,numero))
+
+
+```
+
+```{r}
+
+# 2.5 Crear una función que reemplace valores especificados en un vector numérico (por ejemplo los -1) con NA.
+
+reemplazar_con_na <- function(vector, valor_a_reemplazar) {
+  vector[vector == valor_a_reemplazar] <- NA
+  return(vector)
+}
+
+# Ejemplo de un vector numérico
+mi_vector <- c(10, 5, -1, -1, 12, 15)
+
+# Valor que queremos reemplazar con NA
+valor_a_reemplazar <- -1
+
+# Llamada a la función para reemplazar el valor específico con NA
+vector_con_na <- reemplazar_con_na(mi_vector, valor_a_reemplazar)
+
+# Mostrar el vector resultante con NA
+print("Vector con NA reemplazados:")
+print(vector_con_na)
+
+```
+
+
+```{r}
+# 2.6 Pensar qué operación realiza el siguiente script y transformarlo en una función. ¿Cuántos argumentos necesitaría? ¿Cómo la llamaría a la función?
+
+# round(x / sum(x, na.rm = TRUE) * 100, 1)
+# round(y / sum(y, na.rm = TRUE) * 100, 1)
+# round(z / sum(z, na.rm = TRUE) * 100, 1)
+
+
+convertir_a_porcentaje <- function(vector, decimales = 1) {
+  porcentaje <- round(vector / sum(vector, na.rm = TRUE) * 100, decimales)
+  return(porcentaje)
+}
+
+x <- c(10, 20, 30, NA, 40)
+y <- c(15, NA, 25, 35, 45)
+z <- c(5, 15, NA, 25, 35)
+
+x_porcentaje <- convertir_a_porcentaje(x)
+y_porcentaje <- convertir_a_porcentaje(y, decimales = 2)
+z_porcentaje <- convertir_a_porcentaje(z, decimales = 3)
+
+print("x en porcentaje:")
+print(x_porcentaje)
+
+print("y en porcentaje:")
+print(y_porcentaje)
+
+print("z en porcentaje:")
+print(z_porcentaje)
+
+```
+
+
+
+```{r}
+#2.7 Escribir la función ambos_na() que toma dos vectores del mismo tamaño y devuelve los índices correspondientes a posiciones donde los dos vectores tienen NA. ¿Qué sucede con esta función si los vectores tienen distinto tamaño? Agregar una verificación y mensaje de texto que advierta que los vectores no tienen el mismo tamaño.
+
+
+ambos_na <- function(vector1, vector2) {
+  # Verificar que los vectores tengan el mismo tamaño
+  if (length(vector1) != length(vector2)) {
+    stop("Los vectores no tienen el mismo tamaño.")
+  }
+
+  # Encontrar índices donde ambos vectores tienen NA
+  indices_na <- which(is.na(vector1) & is.na(vector2))
+  return(indices_na)
+}
+
+# Ejemplo de vectores
+vector1 <- c(10, NA, 15, 20, NA)
+vector2 <- c(NA, 5, 15, NA, NA)
+
+# Llamar a la función
+indices_con_ambos_na <- ambos_na(vector1, vector2)
+
+# Mostrar los índices con NA en ambos vectores
+print("Índices con NA en ambos vectores:")
+print(indices_con_ambos_na)
+
+```
+
+
+```{r}
+#2.8 Escribir una función que devuelva un objeto gráfico de ggplot2 que realice de forma incremental lo siguiente
+
+    # Dibuje un scatterplot de la variable ´x´ e ´y´ de un dataset.
+    # Agregar una recta correspondiente al mejor ajuste lineal (sin mostrar el sombreado de margen de error).
+    # Agregue un título
+
+
+
+funcion_grafica1 = function(df, x, y){
+  ggplot(data=df, aes({{x}},{{y}})) + geom_point()
+  
+  
+
+library(ggplot2)
+
+crear_grafico <- function(datos) {
+  # Crear el gráfico de dispersión (scatterplot) y la recta de mejor ajuste
+  grafico <- ggplot(data = datos, aes(x = x, y = y)) +
+    geom_point() +  # Scatterplot
+    geom_smooth(method = "lm", se = FALSE) +  # Recta de mejor ajuste sin sombreado de margen de error
+    labs(title = "Gráfico de dispersión con la recta de mejor ajuste")  # Título
+  
+  return(grafico)
+}
+
+# Crear un ejemplo de datos
+datos_ejemplo <- data.frame(
+  x = c(1, 2, 3, 4, 5),
+  y = c(3, 5, 7, 9, 11)
+)
+
+# Llamar a la función para crear el gráfico
+grafico_final <- crear_grafico(datos_ejemplo)
+
+# Mostrar el gráfico
+print(grafico_final)
+
+}
+
+
+
+
+
+```
+
+```{r}
+
+
+library(ggplot2)
+
+crear_grafico <- function(dataframe, columna_x, columna_y) {
+  # Crear el gráfico de dispersión (scatterplot) y la recta de mejor ajuste
+  grafico <- ggplot(data = dataframe, aes_string(x = columna_x, y = columna_y)) +
+    geom_point() +  # Scatterplot
+    geom_smooth(method = "lm", se = FALSE) +  # Recta de mejor ajuste sin sombreado de margen de error
+    labs(title = "Gráfico de dispersión con la recta de mejor ajuste")  # Título
+  
+  return(grafico)
+}
+
+# Ejemplo de datos en un data frame
+datos_ejemplo <- data.frame(
+  x = c(1, 4, 3, 4, 5),
+  y = c(3, 5, 7, 9, 11)
+)
+
+# Llamar a la función para crear el gráfico
+grafico_final <- crear_grafico(datos_ejemplo, "x", "y")
+
+# Mostrar el gráfico
+print(grafico_final)
+
+
+```
+
+```{r}
+# 2.9 Pensar qué hace esta función y entendiendo su finalidad, sugerir un mejor nombre:
+
+vector_mayor_o_igual_que_num <- function(lst, n) {
+  length(lst) >= n
+}
+```
+
+
+```{r}
+#2.11 Escribir una función que filtre un data frame para seleccionar filas donde una columna específica contiene valores faltantes.
+
+filtrar_filas_con_na <- function(dataframe, columna) {
+  return(dataframe[is.na(dataframe[[columna]]), , drop = FALSE])
+}
+
+
+```
+
+
+```{r}
+# 2.12 Escribir una función que calcule estadísticas resumidas (media, mediana, mínimo, máximo) para una columna numérica en un data frame.
+
+
+calcular_estadisticas <- function(dataframe, columna) {
+  resumen <- summary(dataframe[[columna]])
+  return(resumen)
+}
+
+```
+
+
+```{r}
+# 2.13 Ídem el anterior pero agrupando por grupo (es decir, uno de los argumentos de la función debe ser la variable por la que hay que agrupar).
+
+calcular_estadisticas_por_grupo <- function(dataframe, columna_grupo, columna_numerica) {
+  resumen <- aggregate(dataframe[[columna_numerica]], by = list(dataframe[[columna_grupo]]), FUN = summary)
+  return(resumen)
+}
+
+```
+
+
+
+```{r}
+#2.14 Escribir una función que genere un gráfico de dos variables numéricas de un data frame usando geom_hex(). Comprobar con un ejemplo.
+
+library(ggplot2)
+
+generar_grafico_hex <- function(dataframe, columna_x, columna_y) {
+  grafico <- ggplot(data = dataframe, aes(x = dataframe[[columna_x]], y = dataframe[[columna_y]])) +
+    geom_hex() +
+    labs(title = "Gráfico de dos variables numéricas usando geom_hex()")
+  
+  return(grafico)
+}
+
+```
+
+```{r}
+# Ejemplos para probar 2.11 a 2.14
+
+# Crear un data frame de ejemplo
+df_ejemplo <- data.frame(
+  x = c(1, 2, 3, NA, 5),
+  y = c(3, NA, 7, 9, 11),
+  grupo = c("A", "B", "A", "B", "A")
+)
+
+# Ejemplo 2.11: Filtrar filas con NA en una columna específica
+filas_con_na <- filtrar_filas_con_na(df_ejemplo, "x")
+print("Filas con NA en la columna 'x':")
+print(filas_con_na)
+
+# Ejemplo 2.12: Calcular estadísticas resumidas para una columna numérica
+estadisticas_x <- calcular_estadisticas(df_ejemplo, "x")
+print("Estadísticas para la columna 'x':")
+print(estadisticas_x)
+
+# Ejemplo 2.13: Calcular estadísticas resumidas agrupando por una variable
+estadisticas_por_grupo <- calcular_estadisticas_por_grupo(df_ejemplo, "grupo", "x")
+print("Estadísticas por grupo para la columna 'x':")
+print(estadisticas_por_grupo)
+
+# Ejemplo 2.14: Generar un gráfico de dos variables numéricas usando geom_hex()
+grafico_hex <- generar_grafico_hex(df_ejemplo, "x", "y")
+print("Gráfico de dos variables numéricas usando geom_hex():")
+print(grafico_hex)
+
+```
+
+
+```{r}
+# 3.1 Utilice un while para encontrar la potencia menor de 2 que sea mayor que 1000.
+
+
+res15 = FALSE
+j=0
+resultado15 = 0  # Se inicializa la variable resultado15
+
+
+while(res15==FALSE){
+  if(2** j > 1000 ){
+    res15=TRUE
+    resultado15 = 2** j
+  }
+  else{
+    j=j+1
+  }  
+    
+}
+
+
+print(paste(j, "ya que 2^", j, " es ", resultado15))
+
+```
+
+
+```{r}
+# 3.2 Escribe un while para calcular la suma de todos los números naturales positivos menores que 100 que sean múltiplos de 7.
+
+acum = 0
+i = 1
+
+while(acum<100){
+  if(i %% 7 == 0){
+    print(i)
+    acum = acum + i
+  }
+  i = i + 1
+}
+
+print(paste("respuesta total: ",acum))
+```
+
+
+```{r}
+#3.3 Crea un while para simular el crecimiento de una población. Comienza con 100 individuos y, cada año, la población se duplica. Calcula cuántos años se necesitan para que la población alcance los 1000.
+
+poblacion = 100
+anio = 0
+
+while(poblacion<1000){
+  anio = anio + 1
+  poblacion = poblacion * 2
+}
+
+print(anio)
+
+
+```
+
+```{r}
+# 3.4 Utilice un bucle mientras para encontrar el número primo más grande menor que 100.
+
+
+esPrimo <- function(num) {
+  if (num < 2) {
+    return(FALSE)
+  }
+  
+  for (i in 2:(sqrt(num))) {
+    if (num %% i == 0) {
+      return(FALSE)
+    }
+  }
+  
+  return(TRUE)
+}
+
+num_primo_mas_grande <- 2  # Primer número primo
+res_primo_mas_grande <- 0
+
+for (i in 2:100) {
+  if (esPrimo(i)) {
+    res_primo_mas_grande <- i
+  }
+}
+
+print(res_primo_mas_grande)
+
+```
+```{r}
+funcion_19 <- function(n){
+  suma = 0 
+  
+  vector_n_tiradas = sample(c(1,2,3,4,5,6) , N , replace = TRUE)
+  
+  suma = sum(vector_n_tiradas)
+  
+  return(suma)
+}
+
+acum=0
+N = 10
+resultado19 = 0
+
+for(i in 1:10000){
+  resultado19[i] = funcion_19(N)
+}
+
+
+
+
+ggplot(data.frame(res19 = resultado19), aes(x=res19) ) + geom_histogram()
+```
+
+
+```{r}
+#4.2 En un grupo de N personas, ¿cuál es la probabilidad de que al menos dos personas cumplan años el mismo día?
+
+N = 50
+cumples = sample(1:365, N, replace = TRUE)
+
+coincidencia <- anyDuplicated(cumples) > 0
+
+if (coincidencia) {
+  print("¡Hubo al menos una coincidencia en las fechas de cumpleaños!")
+} else {
+  print("No hubo coincidencia en las fechas de cumpleaños.")
+}
+
+
+
+
+```{r}
+huboCoincidencia <- function(vector) {
+  duplicados <- anyDuplicated(vector) > 0
+  return(duplicados)
+}
+
+N <- 50
+n_coincidencias <- 0
+
+for (i in 1:10000) {
+  cumples <- sample(1:365, N, replace = TRUE)
+  
+  if (huboCoincidencia(cumples)) {
+    n_coincidencias <- n_coincidencias + 1
+  }
+}
+
+print(paste("Numero de coincidencias: ", n_coincidencias))
+
+prob <- n_coincidencias / 10000
+
+print(paste("La probabilidad de que haya una coincidencia es:", prob))
+
+
+```
+
+
+```{r}
+huboCoincidencia <- function(vector) {
+  return(anyDuplicated(vector) > 0)
+}
+
+N <- 50
+n_coincidencias <- 0
+
+for (i in 1:10000) {
+  cumples <- sample(1:365, N, replace = TRUE)
+  
+  if (huboCoincidencia(cumples)) {
+    n_coincidencias <- n_coincidencias + 1
+  }
+}
+
+print(paste("Numero de coincidencias: ", n_coincidencias))
+
+prob <- n_coincidencias / 10000
+
+print(paste("La probabilidad de que haya una coincidencia es:", prob))
+
+resp = pbirthday(50)
+
+print(paste("Probabilidad segun la funcion pbirthday() : ",resp))
+
+```
+
+```{r}
+# F- Hacer un gráfico que muestre la probabilidad de coincidencia en función del número de personas en el grupo. Puede usar la función pbirthday() o pcumples().
+
+
+library(ggplot2)
+
+# Define el vector con los tamaños de los grupos.
+N_vec <- 1:50
+
+# Inicializa un vector para almacenar las probabilidades de coincidencia
+p_c <- numeric(length(N_vec))
+
+# Calcula la probabilidad de coincidencia para cada tamaño de grupo
+for (i in 1:length(N_vec)){
+  # Realiza simulaciones para obtener una aproximación de la probabilidad
+  num_simulaciones <- 10000
+  coincidencias <- replicate(num_simulaciones, {
+    cumples <- sample(1:365, N_vec[i], replace = TRUE)
+    anyDuplicated(cumples)
+  })
+  
+  # La probabilidad 
+  p_c[i] <- sum(coincidencias > 0) / num_simulaciones
+}
+
+# Crea el gráfico
+ggplot(data = data.frame(N = N_vec, Probabilidad = p_c), aes(x = N, y = Probabilidad)) +
+  geom_line() +
+  labs(title = "Probabilidad de coincidencia vs. Número de personas en el grupo",
+       x = "Número de personas en el grupo",
+       y = "Probabilidad de coincidencia")
+
+
+```
+
+```{r}
+# A- Crear un vector que contenga todos los votos
+n <- 500 # número de votos para A
+m <- 400 # número de votos para B
+votos <- c(rep(1, n), rep(-1, m))
+
+# B- Crear un escrutinio y evaluar si A se mantuvo siempre al frente
+escrutinio <- sample(votos, n + m, replace = FALSE)
+resultado <- cumsum(escrutinio)
+A_gana_siempre <- all(resultado > 0) # TRUE si A gana siempre, FALSE si no.
+
+# C- Repetir el proceso anterior 1000 veces y contar en cuántos escrutinios A se mantuvo al frente
+cuenta <- 0
+Nrep <- 1000
+
+for (i in 1:Nrep) {
+  escrutinio <- sample(votos, n + m, replace = FALSE)
+  resultado <- cumsum(escrutinio)
+  if (all(resultado > 0)) {
+    cuenta <- cuenta + 1
+  }
+}
+
+p <- cuenta / Nrep
+print("Probabilidad de que A vaya ganando todo el escrutinio:")
+print(p)
+print("Cálculo exacto de la probabilidad:")
+print((n - m) / (n + m))
+
+# D- Calcular la probabilidad de que en el escrutinio vaya ganando B hasta contar 800 votos
+n <- 505 # número de votos para A
+m <- 495 # número de votos para B
+votos <- c(rep(1, n), rep(-1, m))
+
+cuentaA <- 0
+cuentaB <- 0
+Nrep <- 10000
+
+for (i in 1:Nrep) {
+  escrutinio <- sample(votos, n + m, replace = FALSE)
+  resultado <- cumsum(escrutinio)
+  
+  if (resultado[800] > 0) {
+    cuentaA <- cuentaA + 1
+  }
+  
+  if (resultado[800] < 0) {
+    cuentaB <- cuentaB + 1
+  }
+}
+
+pA <- cuentaA / Nrep
+pB <- cuentaB / Nrep
+
+print("Probabilidad de que A vaya ganando hasta contar 800 votos:")
+print(pA)
+print("Probabilidad de que B vaya ganando hasta contar 800 votos:")
+print(pB)
+
+# E- Discusión sobre la suposición hecha en las simulaciones
+# En un escrutinio real, los votos pueden no ser completamente aleatorios, lo cual no se refleja en estas simulaciones aleatorias.
+
+```
+```{r}
+#4.4 Regla de la mayoría. Un modelo simple de propagación de opiniones supone que hay N personas que mantienen dos estados posibles de opinión: {+1, -1}. Inicialmente el número de personas en el estado +1 es n1<N. Luego, en pasos sucesivos, 3 personas seleccionadas al azar interactúan de forma tal que adoptan la opinión mayoritaria entre los 3. Por ejemplo, si hay dos personas con opinión +1 y una con opinión -1, luego de la interacción, la opinión de los tres será +1.
+
+
+# A- Crear el estado inicial de cada persona
+N <- 10   # Número total de personas
+n1 <- 4   # Número de personas que inicialmente opinan +1
+Op <- c(rep(1, n1), rep(-1, N - n1))  # Estado inicial de opinión
+
+# B- Hacer una ronda de interacción y actualizar la opinión
+n_int <- sample(1:N, 3, replace = FALSE)
+Op[n_int] <- ifelse(sum(Op[n_int] == 1) > 1, 1, -1)  # Opinión mayoritaria
+
+# C- Repetir el proceso hasta que se llegue a un consenso
+consenso <- 0
+while (consenso != 1) {
+  n_int <- sample(1:N, 3, replace = FALSE)
+  Op[n_int] <- ifelse(sum(Op[n_int] == 1) > 1, 1, -1)
+  
+  if (all(Op == 1)) {
+    consenso <- 1
+    Oconsenso <- 1
+  }
+}
+
+# D- Crear una función para calcular la probabilidad de consenso
+p_consenso <- function(N, n1) {
+  output <- 0
+  
+  for (i in 1:100) {
+    Op <- c(rep(1, n1), rep(-1, N - n1))  # Estado inicial de opinión
+    
+    consenso <- 0
+    while (consenso != 1) {
+      n_int <- sample(1:N, 3, replace = FALSE)
+      Op[n_int] <- ifelse(sum(Op[n_int] == 1) > 1, 1, -1)
+      
+      if (all(Op == 1)) {
+        consenso <- 1
+        Oconsenso <- 1
+      }
+    }
+    
+    if (Oconsenso == 1) {
+      output <- output + 1
+    }
+  }
+  
+  return(output / 100)
+}
+
+# E- Graficar P1 en función de p para diferentes valores de n1
+library(ggplot2)
+
+n1_values <- 1:N  # Valores de n1
+p_values <- numeric(N)  # Vector para almacenar las probabilidades de consenso
+
+# Calcular las probabilidades de consenso para cada valor de n1
+for (i in 1:N) {
+  p_values[i] <- p_consenso(N, i)
+}
+
+# Crear el gráfico
+ggplot(data.frame(n1 = n1_values, P1 = p_values), aes(x = n1, y = P1)) +
+  geom_line() +
+  labs(x = "Fracción inicial que opina +1 (p)", y = "Probabilidad de consenso en +1 (P1)") +
+  theme_minimal()
+
+```
+
+
+```{r}
+#4.5 Problema de Monty Hall. Un participante de un concurso tiene que elegir entre tres puertas. Detrás de una de ellas hay un premio. Al elegir una puerta, el conductor del concurso le señala cuál de las otras dos puertas seguro no tiene el premio. El participante tiene la opción de quedarse con su opción inicial o cambiar a la otra puerta. ¿Qué le conviene? Calcular la probabilidad de éxito, comparando simulaciones en las que el participante elige quedarse y otras en las que decide cambiar.
+
+
+# Función para simular el juego de Monty Hall
+simular_monty_hall <- function(cambiar_puerta) {
+  # Elegir aleatoriamente la puerta que tiene el premio (1, 2 o 3)
+  puerta_con_premio <- sample(1:3, 1)
+  
+  # Elegir aleatoriamente la puerta inicial del participante
+  puerta_elegida <- sample(1:3, 1)
+  
+  # Monty Hall revela una puerta sin premio que el participante no eligió
+  puertas_reveladas <- setdiff(1:3, c(puerta_con_premio, puerta_elegida))
+  puerta_revelada <- sample(puertas_reveladas, 1)
+  
+  # Si el participante decide cambiar de puerta, elige la puerta restante
+  if (cambiar_puerta) {
+    puerta_elegida <- setdiff(1:3, c(puerta_revelada, puerta_elegida))
+  }
+  
+  # Comprobar si el participante ganó
+  exito <- puerta_elegida == puerta_con_premio
+  
+  return(exito)
+}
+
+# Número de simulaciones
+num_simulaciones <- 1000
+
+# Simular y calcular la probabilidad de éxito si el participante se queda con su elección
+exitos_quedarse <- sum(replicate(num_simulaciones, simular_monty_hall(FALSE)))
+prob_exito_quedarse <- exitos_quedarse / num_simulaciones
+
+# Simular y calcular la probabilidad de éxito si el participante decide cambiar
+exitos_cambiar <- sum(replicate(num_simulaciones, simular_monty_hall(TRUE)))
+prob_exito_cambiar <- exitos_cambiar / num_simulaciones
+
+# Mostrar los resultados
+print("Probabilidad de éxito si el participante se queda con su elección:")
+print(prob_exito_quedarse)
+
+print("Probabilidad de éxito si el participante decide cambiar de puerta:")
+print(prob_exito_cambiar)
+
+```
+
+

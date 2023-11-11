@@ -1,0 +1,331 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+
+```{r}
+
+
+
+Se quiere predecir el peso de un pinguino usando como variables predictoras el largo de la aleta y el sexo del pinguino.
+
+1) Escribir (en lápiz y papel) la ecuación de un modelo lineal para este caso. ¿Qué unidades tienen las variables y cómo se codifica la variable “sexo del pinguino”?
+
+
+Ecuación de un modelo lineal:
+La ecuación de un modelo lineal múltiple se ve de la siguiente manera:
+Peso del Pinguino = β0 + β1 * Largo de la Aleta + β2 * Sexo del Pinguino
+
+El "Peso del Pinguino" es la variable dependiente que estamos tratando de predecir.
+"Largo de la Aleta" es una de las variables predictoras.
+"Sexo del Pinguino" es la otra variable predictora. Dependiendo de cómo esté codificada, puede tomar diferentes valores, por ejemplo, 0 para macho y 1 para hembra.
+
+
+
+```
+
+
+
+```{r}
+2) Ajustar el modelo usando todos los datos disponibles. Reportar los coeficientes encontrados y calcular el error de predicción.
+
+```
+
+
+
+```{r}
+# Cargar la librería y el dataset
+library(palmerpenguins)
+data(penguins)
+
+#names(penguins)
+
+# Eliminar observaciones con NA
+penguins <- na.omit(penguins)
+
+# Ajustar el modelo lineal
+# Ajustar el modelo lineal
+modelo <- lm(body_mass_g ~ flipper_length_mm + sex, data = penguins)
+
+# Obtener los coeficientes
+coeficientes <- coef(modelo)
+print(coeficientes)
+
+# Calcular el error de predicción (RMSE)
+predicciones <- predict(modelo, newdata = penguins)
+rmse <- sqrt(mean((penguins$body_mass_g - predicciones)^2))
+print(rmse)
+
+
+```
+
+
+```{r}
+3) Hacer un gráfico de los datos junto con las predicciones del modelo.
+
+```
+
+```{r}
+# Crear un gráfico de dispersión
+plot(penguins$flipper_length_mm, penguins$body_mass_g, pch = 19, col = ifelse(penguins$sex == "Male", "blue", "red"), main = "Peso de Pinguinos vs. Largo de la Aleta", xlab = "Largo de la Aleta", ylab = "Peso del Pinguino")
+
+# Agregar las predicciones del modelo
+abline(modelo, col = "green")
+
+# Leyenda
+legend("topright", legend = c("Macho", "Hembra"), col = c("blue", "red"), pch = 19)
+
+```
+
+
+```{r}
+4) Dos pinguinos que tienen igual largo de aleta, uno macho y otro hembra, ¿qué diferencia de peso predice el modelo que tendrán?
+
+```
+
+
+
+```{r}
+Diferencia de peso entre un pinguino macho y hembra con igual largo de aleta:
+Para determinar la diferencia de peso predicha por el modelo entre un pinguino macho y una hembra con el mismo largo de aleta, simplemente inserta los valores correspondientes en la ecuación del modelo. Si la variable "Sexo del Pinguino" está codificada como 0 para macho y 1 para hembra, la diferencia de peso predicha sería:
+Diferencia de Peso = β2 * (1 - 0) = β2
+
+Donde β2 es el coeficiente correspondiente a la variable "Sexo del Pinguino" en el modelo. Puedes obtener este valor de los coeficientes del modelo que calculaste en el paso 1.
+
+Recuerda que este es un modelo simplificado y que hay otras consideraciones a tener en cuenta en un análisis real, como la significancia estadística de los coeficientes y la calidad del ajuste del modelo.
+
+
+
+
+
+```
+
+
+```{r}
+Ejercicio 2
+
+1) Escribir (en lápiz y papel) la ecuación de un modelo lineal para este caso. ¿Cómo se codifica la variable “especie”?
+  
+---
+
+Ecuación de un modelo lineal:
+La ecuación de un modelo lineal múltiple para predecir el peso de un pingüino usando el largo de la aleta y la especie como variables predictoras sería:
+Peso del Pinguino = β0 + β1 * Largo de la Aleta + β2 * Especie
+
+El "Peso del Pinguino" es la variable dependiente que estamos tratando de predecir.
+"Largo de la Aleta" es una de las variables predictoras.
+"Especie" es la otra variable predictora. La forma en que se codifica la variable "Especie" dependerá de cómo esté representada en el conjunto de datos. Esto podría ser una codificación numérica, donde cada especie tiene un número único asignado, o una codificación de tipo "dummy" (variables binarias) donde cada especie se representa como una variable binaria separada.
+
+
+```
+```{r}
+2) Explicar qué diferencia tiene este modelo respecto al propuesto en el ejercicio 1
+Ajustar el modelo usando todos los datos disponibles. Reportar los coeficientes encontrados y calcular el error de predicción.
+
+```
+
+```{r}
+Diferencias con respecto al modelo del ejercicio 1:
+El modelo propuesto en este ejercicio se diferencia del modelo propuesto en el ejercicio 1 en términos de las variables predictoras. En el ejercicio 1, se utilizó el sexo del pingüino como variable predictora, mientras que en este ejercicio se utiliza la especie del pingüino como variable predictora. Esto significa que el modelo tratará de determinar cómo el peso del pingüino está relacionado con el largo de la aleta y la especie del pingüino en lugar de su sexo. Además, la codificación de la variable "Especie" puede ser diferente de la codificación del "Sexo" en términos de cómo se representan las categorías.
+
+
+```
+
+```{r}
+3) Hacer un gráfico de los datos junto con las predicciones del modelo.
+
+```
+
+```{r}
+# Cargar la librería
+library(palmerpenguins)
+# Cargar el conjunto de datos
+data(penguins)
+penguins <- na.omit(penguins)
+
+# Ajustar el modelo lineal
+modelo <- lm(body_mass_g ~ flipper_length_mm + species, data = penguins)
+
+# Realizar predicciones
+predicciones <- predict(modelo)
+
+# Crear un gráfico de dispersión con predicciones
+plot(penguins$flipper_length_mm, penguins$body_mass_g, pch = 19, col = ifelse(penguins$species == "Adelie", "blue", ifelse(penguins$species == "Chinstrap", "red", "green")), main = "Peso de Pinguinos vs. Largo de la Aleta", xlab = "Largo de la Aleta", ylab = "Peso del Pinguino")
+
+# Agregar las predicciones del modelo
+points(penguins$flipper_length_mm, predicciones, pch = 4, col = "purple")
+
+# Leyenda
+legend("topright", legend = unique(penguins$species), col = c("blue", "red", "green"), pch = c(19, 19, 4))
+
+```
+
+
+```{r}
+Ejercicio 3
+Modificar lo hecho en el ejercicio 2 introduciendo una tercera variable predictora que sea la “interacción” entre el la aleta y la especie.
+
+1) Escribir la ecuación de un modelo lineal para este caso.
+Explicar qué diferencia tiene este modelo respecto al propuesto en el ejercicio 2.
+
+```
+
+
+```{r}
+Ecuación de un modelo lineal con interacción:
+La ecuación de un modelo lineal con una interacción entre el largo de la aleta y la especie se ve de la siguiente manera:
+
+Peso del Pinguino = β0 + β1 * Largo de la Aleta + β2 * Especie + β3 * (Largo de la Aleta * Especie)
+
+El "Peso del Pinguino" es la variable dependiente que estamos tratando de predecir.
+"Largo de la Aleta" es una de las variables predictoras.
+"Especie" es la otra variable predictora.
+El término β3 * (Largo de la Aleta * Especie) representa la interacción entre el largo de la aleta y la especie.
+Diferencias con respecto al modelo del ejercicio 2:
+La principal diferencia en este modelo en comparación con el modelo del ejercicio 2 es la introducción de la interacción entre el largo de la aleta y la especie. En el ejercicio 2, el modelo consideraba el efecto independiente del largo de la aleta y la especie en el peso del pingüino. En este nuevo modelo, se explora cómo la relación entre el largo de la aleta y el peso puede variar según la especie del pingüino. La interacción permite capturar cómo la longitud de la aleta puede influir en el peso de manera diferente para diferentes especies.
+
+
+```
+
+```{r}
+2) Ajustar el modelo usando todos los datos disponibles. Reportar los coeficientes encontrados y calcular el error de predicción.
+
+```
+
+```{r}
+# Cargar la librería
+library(palmerpenguins)
+penguins <- na.omit(penguins)
+# Cargar el conjunto de datos
+data(penguins)
+
+# Ajustar el modelo lineal con interacción
+modelo <- lm(body_mass_g ~ flipper_length_mm + species + flipper_length_mm * species, data = penguins)
+
+# Realizar predicciones
+predicciones <- predict(modelo)
+
+# Crear un gráfico de dispersión con predicciones
+plot(penguins$flipper_length_mm, penguins$body_mass_g, pch = 19, col = ifelse(penguins$species == "Adelie", "blue", ifelse(penguins$species == "Chinstrap", "red", "green")), main = "Peso de Pinguinos vs. Largo de la Aleta", xlab = "Largo de la Aleta", ylab = "Peso del Pinguino")
+
+# Agregar las predicciones del modelo
+points(penguins$flipper_length_mm, predicciones, pch = 4, col = "purple")
+
+# Leyenda
+legend("topright", legend = unique(penguins$species), col = c("blue", "red", "green"), pch = c(19, 19, 4))
+
+```
+
+
+```{r}
+3) Hacer un gráfico de los datos junto con las predicciones del modelo.
+Dos pinguinos que tienen igual largo de aleta, uno Adelie y otro Gentoo, ¿qué diferencia de peso predice el modelo que tendrán?
+
+```
+
+```{r}
+# Cargar la librería
+library(palmerpenguins)
+# Cargar el conjunto de datos
+data(penguins)
+penguins <- na.omit(penguins)
+
+# Ajustar el modelo lineal con interacción
+modelo <- lm(body_mass_g ~ flipper_length_mm + species + flipper_length_mm * species, data = penguins)
+
+# Realizar predicciones
+predicciones <- predict(modelo)
+
+# Crear un gráfico de dispersión con predicciones
+plot(penguins$flipper_length_mm, penguins$body_mass_g, pch = 19, col = ifelse(penguins$species == "Adelie", "blue", ifelse(penguins$species == "Chinstrap", "red", "green")), main = "Peso de Pinguinos vs. Largo de la Aleta", xlab = "Largo de la Aleta", ylab = "Peso del Pinguino")
+
+# Agregar las predicciones del modelo
+points(penguins$flipper_length_mm, predicciones, pch = 4, col = "purple")
+
+# Leyenda
+legend("topright", legend = unique(penguins$species), col = c("blue", "red", "green"), pch = c(19, 19, 4))
+
+# Calcular la diferencia de peso entre un Adelie y un Gentoo con igual "Largo de la Aleta" (por ejemplo, 190 mm)
+adelie_diff <- coef(modelo)["speciesAdelie"] + coef(modelo)["flipper_length_mm:speciesAdelie"] * 190
+gentoo_diff <- coef(modelo)["speciesGentoo"] + coef(modelo)["flipper_length_mm:speciesGentoo"] * 190
+predicted_difference <- adelie_diff - gentoo_diff
+
+print(paste("Diferencia de peso predicha entre un Adelie y un Gentoo con igual largo de aleta (190 mm):", round(predicted_difference, 2), "gramos"))
+
+```
+
+
+
+```{r}
+Crear varios modelos de regresión lineal múltiple para predecir el peso de un pinguino en base a varias variables predictoras.
+
+Dividir el dataset en un grupo de entrenamiento y uno de test (80% - 20%).
+Crear y ajustar 6 modelos que contengan desde 1 hasta 6 variables predictoras sumando en cada modelo una variable nueva. Las 6 variables son: sexo, especie, año de la expedición, largo de la aleta, largo del pico, ancho del pico.
+Calcular para cada uno el error predicción en el grupo de entrenamiento y en el grupo de test.
+¿Cuál modelo tiene el menor error de ajuste? ¿Cuál el menor error de predicción?
+
+```
+```{r}
+# Cargar la librería
+library(palmerpenguins)
+
+# Cargar el conjunto de datos
+data(penguins)
+
+# Eliminar observaciones con NA
+penguins <- na.omit(penguins)
+
+# Dividir el conjunto de datos en grupos de entrenamiento y prueba (80% - 20%)
+set.seed(123)  # Establecer una semilla para reproducibilidad
+n <- nrow(penguins)
+indices_entrenamiento <- sample(1:n, 0.8 * n)
+datos_entrenamiento <- penguins[indices_entrenamiento, ]
+datos_prueba <- penguins[-indices_entrenamiento, ]
+
+# Lista de variables predictoras
+variables_predictoras <- c("sex", "species", "year", "flipper_length_mm", "bill_length_mm", "bill_depth_mm")
+
+# Inicializar vectores para almacenar los errores de ajuste y predicción
+errores_ajuste <- numeric(length(variables_predictoras))
+errores_prediccion <- numeric(length(variables_predictoras))
+
+# Crear y ajustar modelos con diferentes combinaciones de variables predictoras
+for (i in 1:length(variables_predictoras)) {
+  modelo <- lm(body_mass_g ~ ., data = datos_entrenamiento[, c("body_mass_g", variables_predictoras[1:i])])
+  
+  # Calcular el error de ajuste (R^2) en el grupo de entrenamiento
+  r_squared <- summary(modelo)$r.squared
+  errores_ajuste[i] <- r_squared
+  
+  # Realizar predicciones en el grupo de prueba
+  predicciones <- predict(modelo, newdata = datos_prueba)
+  
+  # Calcular el error de predicción (RMSE) en el grupo de prueba
+  rmse <- sqrt(mean((datos_prueba$body_mass_g - predicciones)^2))
+  errores_prediccion[i] <- rmse
+}
+
+# Crear un dataframe con los resultados
+resultados <- data.frame(Variables_Predictoras = variables_predictoras, Error_de_Ajuste = errores_ajuste, Error_de_Prediccion = errores_prediccion)
+
+# Imprimir los resultados
+print(resultados)
+
+```
+

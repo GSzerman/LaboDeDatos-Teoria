@@ -1,0 +1,102 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+d = data.frame(x = 1:5, y= letters[1:5], z = c(T,T,F,T,F))
+
+# El dataframe 'd' es una fila de columnas
+d
+```
+
+
+```{r}
+devolver_moda = function(x){
+  
+  tabla_frecuencias = table(x)
+  
+  numero_columna = which.max(tabla_frecuencias)
+  
+  nombres_tabla_frecuencias = names(tabla_frecuencias)
+  
+  
+  return(nombres_tabla_frecuencias[numero_columna])
+}
+
+colores <- as.factor(c('red', 'green', 'red', 'black', 'yellow' ,'green', 'blue','green','blue', 'blue','green'))
+
+
+devolver_moda(colores)
+
+```
+```{r}
+
+devolver_desvio_standard = function(array){
+  
+  # La funcion es V = sumar (xi-u)^2 / length(x)
+  # y el desvio standard es d = sqrt(V)
+  
+  
+  # Hago xi - u
+  
+  xi_menos_u = array - mean(array)
+  
+  termino_arriba = xi_menos_u^2
+  
+  varianza = sum(termino_arriba) / length(array)
+  
+  desvio_standard = sqrt(varianza)
+  
+  
+  return(desvio_standard)
+  
+}
+
+
+
+devolver_desvio_standard(c(10,20,21))
+
+sd(c(10,20,21))
+```
+
+```{r}
+# Función para calcular el desvío estándar
+mi_desvio <- function(x) {
+  n <- length(x)
+  mean_x <- mean(x)
+  squared_diffs <- (x - mean_x)^2
+  variance <- sum(squared_diffs) / n
+  std_dev <- sqrt(variance)
+  return(std_dev)
+}
+
+# Datos de ejemplo
+data <- c(3, 4, 6, 8, 10)
+
+# Calcular el desvío estándar usando tu función
+mi_resultado <- mi_desvio(data)
+print(paste("Mi desvío estándar:", mi_resultado))
+
+# Calcular el desvío estándar usando la función sd() de R-base
+sd_resultado <- sd(data)
+print(paste("Resultado de sd() de R-base:", sd_resultado))
+```
+
+
+
+
