@@ -66,3 +66,10 @@ ggplot(data = df,
 
 
 
+# Resta resumir:
+# https://ldd2023.netlify.app/slides/script_class.R
+# https://docs.google.com/presentation/d/1v5PKKk5BVrYsVZnKNG9zu2g0jRhuzVQiXBqPM-vGLGs/edit#slide=id.g27e0cf72f59_0_41
+# https://docs.google.com/presentation/d/17yJFkzKTRdFo9aeqyXpgY6yQKOQjrh3DHiX6EWFu66M/edit#slide=id.gefc0be6deb_0_132
+# Guias 2 a 8 inclusive
+
+
