@@ -89,8 +89,24 @@ res <- penguins %>%
 
 # guia 5
 
+df1 = rbind(fila1,fila2) 
+df2 = cbind(col1,col2)
+
+res <- df1 %>%
+  inner_join(df2, by = "ID") %>% 
+  left_join(df3, by = "ID") %>%
+  distinct(ID) # finalmente hago un distinct
+
+limites_etarios <- c(18, 21, 27, 80)
+dfEst <- dfEst %>%
+  mutate(GrupoEtario = cut(edad, breaks = limites_etarios, labels = etiquetas_etarios))
 
 
+indices <- which(is.na(vect1) & is.na(vect2)) # retorno un vector de indices que sean NA para vect1 y vect2
+return(indices)
+
+
+# guia 6
 
 
 # Resta resumir:
