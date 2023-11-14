@@ -56,13 +56,40 @@ levels(colores_factorizado) # me muestra el distinct de las categorias
 
 ggplot(data = df, 
        mapping = aes(x = year, y = pop, size = country)) + # size o color podria haber usado
-  geom_point() + # Grafico de dispersion
+      # mapping = aes(x = year, y = pop, color = country)) # != (aes(x=year,y=pop),color=blue)
+  geom_point() + # Grafico de dispersion (geom_smooth(),  geom_line(), geom_bar()) Cada una puede recibir todos los mismos args que ggplot
   theme_classic()
-#guia 2
+#guia 3
 
 #cat nominal: Colores (rojo, verde, azul)
 #cat ordinal: Niveles de satisfacción (baja, media, alta)
 #num discreta / continua (son faciles)
+
+ggplot(data = gapminder, aes(x = continent, y = lifeExp)) +
+  geom_boxplot() + 
+  labs(title = "Boxplot de esperanza de vida por continente", x = "Continente", y = "Esperanza de Vida") +
+  theme_minimal() +
+  facet_wrap(~continent) # Esto le agrega el facetado para que cada continente tenga su box plot uno al lado de otro
+
+
+#guia 4
+
+res <- penguins %>%
+  drop_na() %>%
+  rename(masa_corporal_g = body_mass_g) %>% # renombro una columna
+  mutate(col_nueva = col1 / col2, peso = ifelse(col1 < 4000, "chico", "grande"))) %>% # creo nuevas columnas
+  select(species, bill_ratio, starts_with("bill")) %>% # selecciono dos de las columnas y las que starts with bill
+  filter(species %in% c("Adelie", "Gentoo") || island == "Dream") %>%  # es un where
+  group_by(species, island, year)) %>%
+  summarise(bill_ratio_mean = mean(bill_ratio),
+            cant_observ = n() ) # n() es como el count
+
+# Paradoja de Simpson: tendencia que aparece en subgrupos de datos se invierte al combinar esos subgrupos,
+# esto destaca la importancia de mirar la confusion matrix
+
+# guia 5
+
+
 
 
 
