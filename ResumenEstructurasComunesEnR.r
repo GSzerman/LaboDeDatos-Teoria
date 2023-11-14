@@ -43,7 +43,7 @@ personas_63kg <- sum(peso_sin_NA == 63) # Esto calcula cuantas personas pesan 63
 tabla_frecuencias <- table( c(1, 2, 2, 3) ) 
 # En la primer fila me aparece un distinct del valor 1,2,3
 # En la segunda fila me aparece la cant de apariciones de ese valor 1,2,1
-
+# Si utilizase prop.table( c(1,2,2,3)) me devolveria en la segunda fila 0.25, 0.5, 0.25
 
 d <-  data.frame(x = 1:5, y = letters[1:5], z = c(T,T,F,T,F)) # x es una columna, y es otra columna..
 unique(d$z) # me hace un distinct de la columna z
